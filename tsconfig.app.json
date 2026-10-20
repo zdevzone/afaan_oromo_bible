@@ -13,10 +13,10 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "types": ["vite-plus/client"],
-    "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] },
+    "paths": { "@/*": ["./src/*"] },
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.app.tsbuildinfo"
   },
-  "include": ["src", "env.d.ts", "content/fixtures/*.json", "tests"]
+  "include": ["src", "env.d.ts", "content/fixtures/*.json"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }

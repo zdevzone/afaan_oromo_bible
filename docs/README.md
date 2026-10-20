@@ -1,6 +1,6 @@
 # Afaan Oromo Bible — development foundation
 
-Status: architecture baseline established 2026-10-19; implementation may begin with Phase 1 in [ROADMAP.md](ROADMAP.md). This describes intended V1 behavior, not a claim that it already exists. The original brief is input; the user's latest choices of **Vite+** and **Varlock** supersede its Vite recommendation.
+Status: architecture baseline established 2026-10-19; Phase 1 implementation is underway. Frontend and headless SQLite checks now pass; the native Windows/macOS reader loop is still pending. See the [current Phase 1 checkpoint and ordered handoff](ROADMAP.md) and the [repository status](../README.md) for measured results. The shared decisions below describe intended V1 behavior, not a claim that every feature exists. The original brief is input; the user's latest choices of **Vite+** and **Varlock** supersede its Vite recommendation.
 
 ## Overall plan
 
@@ -14,56 +14,56 @@ Status: architecture baseline established 2026-10-19; implementation may begin w
 
 These are engineering decisions adopted for planning and the authorized initial implementation. Product/licensing choices marked **verification required** are not approved by this document.
 
-| Topic | Baseline |
-| --- | --- |
-| Frontend | One React + TypeScript application; Vite+ (`vp`, project-local `vite-plus`); Tailwind CSS; licensed Shadcnblocks Pro first, underlying shadcn/ui primitives. |
-| Environment | Varlock schema and Vite integration; all frontend values public; no reader secrets or backend. |
-| Desktop | Tauri 2; narrow Rust commands using `rusqlite` (bundled SQLite/FTS5); no generic SQL IPC or second ORM/SQL plugin. |
-| Storage | One immutable `library.sqlite` built from approved USFM and normalized intermediate JSON; one mutable `user.sqlite`; JSON + IndexedDB browser development adapters behind the same small ports. |
-| Content | One edition for V1; exact edition/canon/audience/rights **verification required**. Never ship invented Scripture. Synthetic fixtures are clearly labeled and excluded from public builds. |
-| References | Stable edition ID + versification ID + stable book code + chapter label + source verse label; ordered verse units may represent bridges/subverses. Cross-edition alignment is never assumed. |
-| User data | Plain-text standalone/verse-linked notes; bookmarks; whole-verse highlights; preferences; reading position. UTC timestamps, UUID IDs, edition-aware anchors. |
-| Backup | Versioned portable JSON of user records, no Scripture payload; validate first and atomically replace user records only after explicit destructive-restore confirmation and a recoverable pre-restore snapshot. No merge in V1. |
-| Search | Separate reference parser; desktop FTS5 over a derived normalized text projection, browser equivalent query semantics on fixture/indexed JSON. No English stemming. Source display text is unchanged. |
-| Languages | Interface locale and Scripture edition are separate settings. V1 Afaan Oromo and English UI catalogs need fluent review; available Bible content remains one approved edition. |
-| UI | Scripture-centered layout, light/dark/system themes, WCAG 2.2 AA goal, keyboard and screen-reader support. No dashboard blocks imposed on reading. |
-| Compatibility | Before public V1.0: break/refactor/reset development data freely; remove obsolete code; no historical migrations, compatibility shims, or deprecated alternatives. After V1.0: preserve user data and introduce tested migrations. |
-| Milestones | Phase 0 foundation/decisions; Phase 1 vertical slice; Phase 2 complete reader/content; Phase 3 reliability/beta; Phase 4 V1.0 release. Post-V1: 1.1 editions/parallel prerequisites; 1.2 study workspace; 1.3 optional AI pilot; sync/platforms later on evidence. |
+| Topic         | Baseline                                                                                                                                                                                                                                                           |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Frontend      | One React + TypeScript application; Vite+ (`vp`, project-local `vite-plus`); Tailwind CSS; licensed Shadcnblocks Pro first, underlying shadcn/ui primitives.                                                                                                       |
+| Environment   | Varlock schema and Vite integration; all frontend values public; no reader secrets or backend.                                                                                                                                                                     |
+| Desktop       | Tauri 2; narrow Rust commands using `rusqlite` (bundled SQLite/FTS5); no generic SQL IPC or second ORM/SQL plugin.                                                                                                                                                 |
+| Storage       | One immutable `library.sqlite` built from approved USFM and normalized intermediate JSON; one mutable `user.sqlite`; JSON + IndexedDB browser development adapters behind the same small ports.                                                                    |
+| Content       | One edition for V1; exact edition/canon/audience/rights **verification required**. Never ship invented Scripture. Synthetic fixtures are clearly labeled and excluded from public builds.                                                                          |
+| References    | Stable edition ID + versification ID + stable book code + chapter label + source verse label; ordered verse units may represent bridges/subverses. Cross-edition alignment is never assumed.                                                                       |
+| User data     | Plain-text standalone/verse-linked notes; bookmarks; whole-verse highlights; preferences; reading position. UTC timestamps, UUID IDs, edition-aware anchors.                                                                                                       |
+| Backup        | Versioned portable JSON of user records, no Scripture payload; validate first and atomically replace user records only after explicit destructive-restore confirmation and a recoverable pre-restore snapshot. No merge in V1.                                     |
+| Search        | Separate reference parser; desktop FTS5 over a derived normalized text projection, browser equivalent query semantics on fixture/indexed JSON. No English stemming. Source display text is unchanged.                                                              |
+| Languages     | Interface locale and Scripture edition are separate settings. V1 Afaan Oromo and English UI catalogs need fluent review; available Bible content remains one approved edition.                                                                                     |
+| UI            | Scripture-centered layout, light/dark/system themes, WCAG 2.2 AA goal, keyboard and screen-reader support. No dashboard blocks imposed on reading.                                                                                                                 |
+| Compatibility | Before public V1.0: break/refactor/reset development data freely; remove obsolete code; no historical migrations, compatibility shims, or deprecated alternatives. After V1.0: preserve user data and introduce tested migrations.                                 |
+| Milestones    | Phase 0 foundation/decisions; Phase 1 vertical slice; Phase 2 complete reader/content; Phase 3 reliability/beta; Phase 4 V1.0 release. Post-V1: 1.1 editions/parallel prerequisites; 1.2 study workspace; 1.3 optional AI pilot; sync/platforms later on evidence. |
 
 The desktop access choice gives real read-only content handles and atomic user-data transactions at a narrow native boundary. It costs a small Rust repository implementation. Keep it limited to these needs; do not create a backend, dependency-injection framework, or general database protocol.
 
 ## Document map and ownership
 
-| Document | Source of truth for |
-| --- | --- |
-| [PRD.md](PRD.md) | Product goals, audience assumptions, decisions and release outcomes |
-| [ROADMAP.md](ROADMAP.md) | Milestones, task order, exact Phase 1 handoff |
-| [MVP_SCOPE.md](MVP_SCOPE.md) | V1 required features, exclusions and completion gates |
-| [USER_STORIES.md](USER_STORIES.md) | Practical journeys and scenario acceptance |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Boundaries, service contracts and architecture diagram |
-| [TECH_STACK.md](TECH_STACK.md) | Dependency choices, versions and tooling verification |
-| [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | Files and module responsibilities |
-| [DATA_MODEL.md](DATA_MODEL.md) | Record definitions, identities and invariants |
-| [SCRIPTURE_PIPELINE.md](SCRIPTURE_PIPELINE.md) | Source-to-content-pack integrity and edition lifecycle |
-| [STORAGE_STRATEGY.md](STORAGE_STRATEGY.md) | Desktop/browser persistence, transactions and backup |
-| [UI_UX_GUIDELINES.md](UI_UX_GUIDELINES.md) | Licensed UI policy, design tokens and accessibility |
-| [FEATURE_SPECIFICATIONS.md](FEATURE_SPECIFICATIONS.md) | Observable feature behavior and edge cases |
-| [DEVELOPMENT_GUIDELINES.md](DEVELOPMENT_GUIDELINES.md) | Daily commands, conventions and compatibility policy |
-| [TESTING_STRATEGY.md](TESTING_STRATEGY.md) | Test layers, fixtures, platform and quality gates |
-| [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md) | Packaging, signing, distribution and V1 transition |
-| [CONTENT_LICENSING.md](CONTENT_LICENSING.md) | Resource register, permissions and attribution gates |
-| [AGENTS.md](AGENTS.md) | Binding implementation instructions for coding agents |
+| Document                                               | Source of truth for                                                 |
+| ------------------------------------------------------ | ------------------------------------------------------------------- |
+| [PRD.md](PRD.md)                                       | Product goals, audience assumptions, decisions and release outcomes |
+| [ROADMAP.md](ROADMAP.md)                               | Milestones, task order, exact Phase 1 handoff                       |
+| [MVP_SCOPE.md](MVP_SCOPE.md)                           | V1 required features, exclusions and completion gates               |
+| [USER_STORIES.md](USER_STORIES.md)                     | Practical journeys and scenario acceptance                          |
+| [ARCHITECTURE.md](ARCHITECTURE.md)                     | Boundaries, service contracts and architecture diagram              |
+| [TECH_STACK.md](TECH_STACK.md)                         | Dependency choices, versions and tooling verification               |
+| [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)           | Files and module responsibilities                                   |
+| [DATA_MODEL.md](DATA_MODEL.md)                         | Record definitions, identities and invariants                       |
+| [SCRIPTURE_PIPELINE.md](SCRIPTURE_PIPELINE.md)         | Source-to-content-pack integrity and edition lifecycle              |
+| [STORAGE_STRATEGY.md](STORAGE_STRATEGY.md)             | Desktop/browser persistence, transactions and backup                |
+| [UI_UX_GUIDELINES.md](UI_UX_GUIDELINES.md)             | Licensed UI policy, design tokens and accessibility                 |
+| [FEATURE_SPECIFICATIONS.md](FEATURE_SPECIFICATIONS.md) | Observable feature behavior and edge cases                          |
+| [DEVELOPMENT_GUIDELINES.md](DEVELOPMENT_GUIDELINES.md) | Daily commands, conventions and compatibility policy                |
+| [TESTING_STRATEGY.md](TESTING_STRATEGY.md)             | Test layers, fixtures, platform and quality gates                   |
+| [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md)             | Packaging, signing, distribution and V1 transition                  |
+| [CONTENT_LICENSING.md](CONTENT_LICENSING.md)           | Resource register, permissions and attribution gates                |
+| [AGENTS.md](AGENTS.md)                                 | Binding implementation instructions for coding agents               |
 
 When decisions change, update their owning document and this table's affected baseline, then affected contracts/tests. Do not copy complete specifications between documents. Resolve conflicts before dependent implementation; the user's explicit instructions take precedence.
 
 ## Initial uncertainty register
 
-| Uncertainty | Owner / resolution point | Safe progress now |
-| --- | --- | --- |
-| Exact established Oromo edition, intended readers and canon | Product/content owner before full corpus import/public distribution | Synthetic fixtures and authorized samples only |
-| Actual purchased Shadcnblocks source and license terms | Design owner before custom alternatives or public source distribution | Inventory official catalog and available files; underlying shadcn primitives for the shell |
-| Vite+/Varlock combination | Engineering during Phase 1 | Verify HMR, typed config, build and native loading; do not silently substitute Vite |
-| Windows/macOS support floor, architectures, signing identities, funding | Release owner before beta | Provisional matrix and untrusted local dev builds only |
-| Oromo UI wording and search normalization | Fluent reviewer before beta | English fallback; no invented confirmed translations |
+| Uncertainty                                                             | Owner / resolution point                                              | Safe progress now                                                                                          |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Exact established Oromo edition, intended readers and canon             | Product/content owner before full corpus import/public distribution   | Synthetic fixtures and authorized samples only                                                             |
+| Actual purchased Shadcnblocks source and license terms                  | Design owner before custom alternatives or public source distribution | Inventory official catalog and available files; underlying shadcn primitives for the shell                 |
+| Vite+/Varlock native loading                                            | Engineering during Phase 1                                            | Frontend checks, renderer builds and invalid-target rejection pass; native WebView loading remains pending |
+| Windows/macOS support floor, architectures, signing identities, funding | Release owner before beta                                             | Provisional matrix and untrusted local dev builds only                                                     |
+| Oromo UI wording and search normalization                               | Fluent reviewer before beta                                           | English fallback; no invented confirmed translations                                                       |
 
 All dates, benchmark targets and provisional support choices are planning values until measured. Read [ROADMAP.md](ROADMAP.md) last for the ordered **Phase 1 Implementation Plan**.

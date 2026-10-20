@@ -10,16 +10,16 @@ Default tooling is Vitest through Vite+, React Testing Library with user-event, 
 
 ## Layers and ownership
 
-| Layer | Scope and representative checks | When |
-| --- | --- | --- |
-| Domain unit | Reference parsing, verse bridge/subverse identity, selection order, query normalization, note validation, backup validation, settings defaults | Every relevant change |
-| React behavior | Navigation and focus, selection/copy feedback, loading/empty/error states, note save failure and retry, UI locale independent of edition | Every relevant change |
-| Adapter contract | Same chapter order, reference lookup, search semantics, persistence, absent-edition behavior and errors in IndexedDB and SQLite | On storage/domain changes |
-| Rust repository | Temp-file databases; read-only content opening; parameterized queries; transaction rollback; unique anchors; serialized writes; filesystem errors | On native changes and CI |
-| Content integrity | Authorized source provenance, checksums, structure, text preservation, declared marker handling, content manifest, attribution | Every content-pack build |
-| Browser journeys | First launch → read → navigate → search → annotate → reload; settings; keyboard use; backup/restore | Pull requests touching the journey; full suite before beta |
-| Native integration | Real Tauri IPC, app-data paths, SQLite/FTS5 availability, restart, clipboard, file dialogs, backup/restore, no production browser adapter | Early Phase 1 and before each candidate |
-| Native release | Installed signed artifacts on Windows/macOS; clean/offline installation; upgrades after V1.0; permissions; uninstall behavior | Every release candidate |
+| Layer              | Scope and representative checks                                                                                                                   | When                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Domain unit        | Reference parsing, verse bridge/subverse identity, selection order, query normalization, note validation, backup validation, settings defaults    | Every relevant change                                      |
+| React behavior     | Navigation and focus, selection/copy feedback, loading/empty/error states, note save failure and retry, UI locale independent of edition          | Every relevant change                                      |
+| Adapter contract   | Same chapter order, reference lookup, search semantics, persistence, absent-edition behavior and errors in IndexedDB and SQLite                   | On storage/domain changes                                  |
+| Rust repository    | Temp-file databases; read-only content opening; parameterized queries; transaction rollback; unique anchors; serialized writes; filesystem errors | On native changes and CI                                   |
+| Content integrity  | Authorized source provenance, checksums, structure, text preservation, declared marker handling, content manifest, attribution                    | Every content-pack build                                   |
+| Browser journeys   | First launch → read → navigate → search → annotate → reload; settings; keyboard use; backup/restore                                               | Pull requests touching the journey; full suite before beta |
+| Native integration | Real Tauri IPC, app-data paths, SQLite/FTS5 availability, restart, clipboard, file dialogs, backup/restore, no production browser adapter         | Early Phase 1 and before each candidate                    |
+| Native release     | Installed signed artifacts on Windows/macOS; clean/offline installation; upgrades after V1.0; permissions; uninstall behavior                     | Every release candidate                                    |
 
 Run fast checks on changes and the full relevant suite before a milestone. Broaden testing when changes affect additional boundaries; do not rerun every unrelated test after documentation-only edits. Record blocked tests as blocked, with the missing environment or input.
 

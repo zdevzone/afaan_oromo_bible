@@ -63,19 +63,19 @@ Return body-text snippets and complete edition-aware addresses. Highlight matchi
 
 Initial conformance vectors below are **synthetic strings, not Scripture**. Encode the composed/decomposed and apostrophe cases as explicit code points in tests. The expected canonical equivalence, doubling, accent and prefix behaviors are required. Apostrophe equivalence rows are proposed until fluent review accepts the mapping table; record the final reviewed table and profile version here before the full index is frozen.
 
-| Stored display/input | Query | Expected |
-| --- | --- | --- |
-| `WAaqaa` | `waaqaa` | Match after default, locale-independent case folding. Display remains `WAaqaa`. |
-| `cafe` + U+0301 | `CAFÉ` | Match after NFC/case fold; composed/decomposed forms agree. |
-| `café` | `cafe` | No whole-token match; no accent removal. |
-| `aa` | `a` | No whole-token match; doubled letters are not collapsed. |
-| `bba` | `ba` | No whole-token match; doubled consonants are preserved. |
-| `ga` + U+2019 + `ee` | `ga'ee` | Proposed match with reviewed U+2019 → U+0027 search-only mapping. |
-| `ga` + U+02BC + `ee` | `ga'ee` | No assumed equivalence; reviewer must decide and document. |
-| `aa, bb` in one unit | `"aa bb"` | Match adjacent normalized tokens; comma does not add a token. |
-| `aa` in one unit, `bb` in the next | `"aa bb"` | No match; phrases do not span verse units. |
-| `waaqaa` | `waa*` | Match explicit prefix. `w*` is a query error. |
-| `"aa` or `aa**` | same malformed input | Query error, no FTS parser exposure. |
+| Stored display/input               | Query                | Expected                                                                        |
+| ---------------------------------- | -------------------- | ------------------------------------------------------------------------------- |
+| `WAaqaa`                           | `waaqaa`             | Match after default, locale-independent case folding. Display remains `WAaqaa`. |
+| `cafe` + U+0301                    | `CAFÉ`               | Match after NFC/case fold; composed/decomposed forms agree.                     |
+| `café`                             | `cafe`               | No whole-token match; no accent removal.                                        |
+| `aa`                               | `a`                  | No whole-token match; doubled letters are not collapsed.                        |
+| `bba`                              | `ba`                 | No whole-token match; doubled consonants are preserved.                         |
+| `ga` + U+2019 + `ee`               | `ga'ee`              | Proposed match with reviewed U+2019 → U+0027 search-only mapping.               |
+| `ga` + U+02BC + `ee`               | `ga'ee`              | No assumed equivalence; reviewer must decide and document.                      |
+| `aa, bb` in one unit               | `"aa bb"`            | Match adjacent normalized tokens; comma does not add a token.                   |
+| `aa` in one unit, `bb` in the next | `"aa bb"`            | No match; phrases do not span verse units.                                      |
+| `waaqaa`                           | `waa*`               | Match explicit prefix. `w*` is a query error.                                   |
+| `"aa` or `aa**`                    | same malformed input | Query error, no FTS parser exposure.                                            |
 
 Include negative apostrophe cases: removing an internal apostrophe must not become the same token, and boundary quotation marks must not prevent finding the enclosed word. Extend this mechanical suite with real authorized Oromo text/query cases selected by fluent reviewers, without publishing restricted source excerpts in fixtures.
 

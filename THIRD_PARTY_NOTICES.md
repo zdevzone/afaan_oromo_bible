@@ -6,4 +6,6 @@ The paid Shadcnblocks Pro catalog is the project's primary UI resource. Its publ
 
 All reading text currently included is explicitly synthetic test material, not a Bible translation. No publisher's Scripture corpus, local font files, commentary or AI output is distributed in this development scaffold.
 
+The book icons in `src-tauri/icons/` are original geometric development placeholders created for this project, with no third-party artwork. Production branding and icon assets remain subject to owner review before release.
+
 Dependency notices must be completed from the actual JavaScript and Rust lockfiles before distribution; this initial file is not a complete release notice inventory. Application source licensing remains an owner decision. No license for the application's own source is implied by the dependencies' licenses.

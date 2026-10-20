@@ -42,11 +42,11 @@ export interface VerseUnit {
 }
 
 export type InlineNode =
-  | { type: 'text'; text: string }
-  | { type: 'verse'; unitKey: string }
-  | { type: 'footnote'; id: string; caller: string; text: string }
+  | { type: "text"; text: string }
+  | { type: "verse"; unitKey: string }
+  | { type: "footnote"; id: string; caller: string; text: string }
   | {
-      type: 'crossReference';
+      type: "crossReference";
       id: string;
       caller: string;
       text: string;
@@ -54,9 +54,9 @@ export type InlineNode =
     };
 
 export type ContentBlock =
-  | { type: 'heading'; text: string }
-  | { type: 'paragraph'; children: InlineNode[] }
-  | { type: 'poetry'; level: number; children: InlineNode[] };
+  | { type: "heading"; text: string }
+  | { type: "paragraph"; children: InlineNode[] }
+  | { type: "poetry"; level: number; children: InlineNode[] };
 
 export interface ChapterContent extends ChapterKey {
   blocks: ContentBlock[];
@@ -118,7 +118,7 @@ export class AppError extends Error {
     message: string,
   ) {
     super(message);
-    this.name = 'AppError';
+    this.name = "AppError";
   }
 }
 

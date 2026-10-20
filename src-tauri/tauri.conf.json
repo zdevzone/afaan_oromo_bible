@@ -28,6 +28,6 @@
   "bundle": {
     "active": false,
     "targets": ["nsis", "dmg"],
-    "icon": []
+    "icon": ["icons/icon.png", "icons/icon.ico"]
   }
 }

@@ -4,12 +4,12 @@ Status: approved release process; edition distribution rights, signing accounts,
 
 ## Release stages
 
-| Stage | Purpose | Exit evidence |
-| --- | --- | --- |
-| Phase 1 development | Prove one React/native slice and tooling | Browser checks plus real Tauri SQLite read/write/restart evidence; missing native prerequisites remain explicit blockers |
-| Phase 2 internal alpha | Complete V1 features and authorized corpus integration | Scope acceptance checks, reproducible content pack, full data/backup journeys |
-| Phase 3 private beta | Stabilize actual installed applications | Native platform testing, Oromo review, accessibility review and recovery drills |
-| Phase 4 public V1.0 | Publish trustworthy offline installers | All gates below, signed artifacts and release notes |
+| Stage                  | Purpose                                                | Exit evidence                                                                                                            |
+| ---------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| Phase 1 development    | Prove one React/native slice and tooling               | Browser checks plus real Tauri SQLite read/write/restart evidence; missing native prerequisites remain explicit blockers |
+| Phase 2 internal alpha | Complete V1 features and authorized corpus integration | Scope acceptance checks, reproducible content pack, full data/backup journeys                                            |
+| Phase 3 private beta   | Stabilize actual installed applications                | Native platform testing, Oromo review, accessibility review and recovery drills                                          |
+| Phase 4 public V1.0    | Publish trustworthy offline installers                 | All gates below, signed artifacts and release notes                                                                      |
 
 Private testers must receive an explicit development-data notice before use: schemas and backups can be reset or replaced until V1.0, and experimental records are not promised preservation. Keep private distribution within verified content permissions; private testing does not waive licensing. Do not call a build public production while using the pre-release data policy.
 

@@ -4,10 +4,10 @@ Status: **approved V1 architecture**. Use one React application with small async
 
 ## Why SQLite plus JSON
 
-| Option | Assessment |
-| --- | --- |
-| Runtime JSON only | Convenient for small fixtures, but full-corpus search, repeated parsing and transactional user writes require extra work. Not the desktop runtime choice. |
-| SQLite only everywhere | Excellent desktop fit, but forces a browser SQLite/WASM or native dependency into ordinary component development. Unnecessary for the initial workflow. |
+| Option                                                                   | Assessment                                                                                                                                                                                          |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime JSON only                                                        | Convenient for small fixtures, but full-corpus search, repeated parsing and transactional user writes require extra work. Not the desktop runtime choice.                                           |
+| SQLite only everywhere                                                   | Excellent desktop fit, but forces a browser SQLite/WASM or native dependency into ordinary component development. Unnecessary for the initial workflow.                                             |
 | **Normalized JSON build format; SQLite desktop; JSON/IndexedDB browser** | Chosen. Keeps import inspectable, supports fast browser iteration, and gives desktop indexed search and durable transactions. Conformance tests constrain the small intentional adapter difference. |
 
 Do not duplicate business logic in two applications. Reference rules, selection, validation, copy formatting and save-state behavior live above the storage boundary. Adapter-specific query/index/transaction details stay below it. The initial fixture is small and intentionally synthetic; browser benchmarks are not evidence of full-corpus desktop performance.

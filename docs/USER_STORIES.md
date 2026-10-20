@@ -152,12 +152,12 @@ Acceptance:
 
 ## Future journeys · excluded from V1
 
-| ID | Story | Earliest milestone / prerequisite |
-| --- | --- | --- |
-| U-F01 | Compare two translations at the same passage | 1.1; two authorized editions and tested explicit versification mappings |
-| U-F02 | Turn personal notes into a sermon or service outline | 1.2; user-validated study workflow, editor/export decisions and preservation of V1 notes |
-| U-F03 | Open a commentary beside Scripture | 1.2; licensed resource, reference mapping and distinct presentation |
-| U-F04 | Ask a question and inspect every cited passage | 1.3 optional AI pilot; approved sources, checked citations, Oromo evaluation, granular consent and budgets |
-| U-F05 | Continue on another device automatically | Later; demonstrated need, identity/conflict model, encryption and sustainable operations |
+| ID    | Story                                                | Earliest milestone / prerequisite                                                                          |
+| ----- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| U-F01 | Compare two translations at the same passage         | 1.1; two authorized editions and tested explicit versification mappings                                    |
+| U-F02 | Turn personal notes into a sermon or service outline | 1.2; user-validated study workflow, editor/export decisions and preservation of V1 notes                   |
+| U-F03 | Open a commentary beside Scripture                   | 1.2; licensed resource, reference mapping and distinct presentation                                        |
+| U-F04 | Ask a question and inspect every cited passage       | 1.3 optional AI pilot; approved sources, checked citations, Oromo evaluation, granular consent and budgets |
+| U-F05 | Continue on another device automatically             | Later; demonstrated need, identity/conflict model, encryption and sustainable operations                   |
 
 These journeys are direction, not implementation permission to add speculative frameworks to V1. Priority and exit gates are in [ROADMAP.md](ROADMAP.md).

@@ -26,15 +26,15 @@ Keep the concise inventory in this document as actual resources are selected. Do
 
 Initial inventory, 2026-10-19: the [official catalog](https://www.shadcnblocks.com/) and [license page](https://www.shadcnblocks.com/license) were consulted. No purchased component source was available in `/workspace/library-files`. The catalog offers Radix and Base UI variants; use the Radix ecosystem consistently for the initial shell and verify each selected primitive against its explicit Radix documentation, such as [Button](https://ui.shadcn.com/docs/components/radix/button). Generic component URLs can redirect to another ecosystem. Paid block selection and source inspection remain pending; no paid block ID is assumed.
 
-| Application need | Initial candidate from underlying shadcn/ui | Verification / composition work |
-| --- | --- | --- |
-| App navigation and collapsible panes | Button, Sheet, Separator, Tooltip | Inspect licensed navigation/panel patterns first; avoid dashboard framing |
-| Reference picker | Popover or Dialog, Command-style search/list patterns | Verify components exist in the acquired source; implement edition-aware reference behavior |
-| Settings | Dialog, Label, Select, Switch, Slider, Radio Group | Accessible names and value announcements; no native browser-styled selectors |
-| Verse actions and study records | Dropdown Menu, Popover, Tabs, Button | Verse focus and dismissal must preserve passage position |
-| Notes | Input, Textarea, Button, Alert Dialog | Plain-text editor; labels, save/failure state, deletion confirmation |
-| Search | Input, Button, appropriate list patterns | Semantic result list; avoid an unnecessary complex grid |
-| Restore and critical errors | Alert Dialog, Alert, Progress where available | Validation preview, destructive confirmation, retry/export actions |
+| Application need                     | Initial candidate from underlying shadcn/ui           | Verification / composition work                                                            |
+| ------------------------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| App navigation and collapsible panes | Button, Sheet, Separator, Tooltip                     | Inspect licensed navigation/panel patterns first; avoid dashboard framing                  |
+| Reference picker                     | Popover or Dialog, Command-style search/list patterns | Verify components exist in the acquired source; implement edition-aware reference behavior |
+| Settings                             | Dialog, Label, Select, Switch, Slider, Radio Group    | Accessible names and value announcements; no native browser-styled selectors               |
+| Verse actions and study records      | Dropdown Menu, Popover, Tabs, Button                  | Verse focus and dismissal must preserve passage position                                   |
+| Notes                                | Input, Textarea, Button, Alert Dialog                 | Plain-text editor; labels, save/failure state, deletion confirmation                       |
+| Search                               | Input, Button, appropriate list patterns              | Semantic result list; avoid an unnecessary complex grid                                    |
+| Restore and critical errors          | Alert Dialog, Alert, Progress where available         | Validation preview, destructive confirmation, retry/export actions                         |
 
 This is an inspection checklist, not a claim that these components have been installed. Until licensed sources are accessible, the initial shell may use verified underlying shadcn/ui primitives and shared tokens. Do not use that allowance to replace the purchased library or bypass its inspection requirement. Do not add another component library without a concrete technical reason and an updated [TECH_STACK.md](TECH_STACK.md).
 
@@ -44,10 +44,10 @@ Use semantic HTML inputs through styled components; “avoid native browser-styl
 
 Use one React tree with responsive compositions, not separate browser and desktop applications. The same layout must work with text enlargement and a resized desktop window. Breakpoints below are initial design values, adjusted after actual content testing.
 
-| Available width | Reader layout |
-| --- | --- |
-| Below 760 CSS px | One main pane. Book navigation and study/search panels open as labeled sheets/dialogs or full-width views with an obvious return action. |
-| 760–1099 CSS px | Reader plus one optional side pane, approximately 18–21 rem. Opening search can replace the navigation pane. |
+| Available width       | Reader layout                                                                                                                                            |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Below 760 CSS px      | One main pane. Book navigation and study/search panels open as labeled sheets/dialogs or full-width views with an obvious return action.                 |
+| 760–1099 CSS px       | Reader plus one optional side pane, approximately 18–21 rem. Opening search can replace the navigation pane.                                             |
 | 1100 CSS px and above | Reader with optional book navigation and one study/search pane when the reader retains a useful width. Collapse side panes before compressing Scripture. |
 
 Use `minmax(0, 1fr)` and overflow-aware containers so a long word, reference, or note cannot force horizontal page scrolling. At 320 CSS px reflow width or 400% zoom, offer one-pane access to all core functions. Never require dragging pane edges to reveal a command. A minimum desktop window size is a release decision, not permission to skip zoom/reflow testing.
@@ -60,15 +60,15 @@ The reader width defaults to approximately 65 characters, bounded around 38–48
 
 Define semantic CSS variables once: background, surface, foreground, muted foreground, border, primary/action, selected, focus, destructive, and highlight colors. Theme components consume tokens rather than scattered hex values. Tailwind utilities implement these decisions; they are not separate design systems.
 
-| Token group | Initial design direction |
-| --- | --- |
-| Light theme | Warm near-white reading background, dark neutral text, restrained teal or blue action accent |
-| Dark theme | Deep neutral background, light neutral text, softened borders; avoid pure white glare |
-| Spacing | 4 px base scale; reader padding 16 px narrow / 24–40 px wide |
-| Controls | Aim for at least 40 × 40 CSS px interactive targets; meet WCAG 2.2 AA target-size exceptions/minimums where compact text actions are necessary |
-| Reader text | Default 20 px; user range 16–32 px, line-height choices 1.4 / 1.65 / 1.9 (default 1.65); no fixed-height clipping |
-| Interface text | Default 14–16 px; preserve OS/browser zoom, with explicit labels for essential controls |
-| Shape and motion | Modest shared radius, subtle surfaces, short optional transitions; honor reduced-motion preferences |
+| Token group      | Initial design direction                                                                                                                       |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Light theme      | Warm near-white reading background, dark neutral text, restrained teal or blue action accent                                                   |
+| Dark theme       | Deep neutral background, light neutral text, softened borders; avoid pure white glare                                                          |
+| Spacing          | 4 px base scale; reader padding 16 px narrow / 24–40 px wide                                                                                   |
+| Controls         | Aim for at least 40 × 40 CSS px interactive targets; meet WCAG 2.2 AA target-size exceptions/minimums where compact text actions are necessary |
+| Reader text      | Default 20 px; user range 16–32 px, line-height choices 1.4 / 1.65 / 1.9 (default 1.65); no fixed-height clipping                              |
+| Interface text   | Default 14–16 px; preserve OS/browser zoom, with explicit labels for essential controls                                                        |
+| Shape and motion | Modest shared radius, subtle surfaces, short optional transitions; honor reduced-motion preferences                                            |
 
 Proposed reader-font candidate: a locally bundled serif such as Noto Serif, after checking the exact font file's license, Oromo glyph coverage, weight/subsetting, punctuation, and distribution notices. A system serif fallback must remain usable while assets load. Use a local/system sans-serif stack for UI controls unless a verified bundled font improves readability. Never load fonts from a remote CDN for V1. Ship only verified files and include required notices.
 
@@ -98,12 +98,12 @@ Use semantic `header`, navigation, `main`, headings, lists, and form labels. Pro
 
 Every required action must work with Tab/Shift+Tab, Enter/Space, appropriate arrow-key behavior inside verified components, and Escape to close transient UI. Do not use positive tabindex or a custom global arrow-key handler that breaks text selection or screen-reader navigation. Trap focus among all available controls inside a modal dialog and make the background inert; restore focus on close. Preserve a logical reading order when visual panes move.
 
-| Command | Proposed desktop shortcut | Constraint |
-| --- | --- | --- |
-| Open reference navigation | Ctrl+K Windows / Command+K macOS | Show in command/help UI; verify OS/WebView collisions |
-| Search Scripture | Ctrl+F / Command+F | Focus app search from non-editing reader context; do not steal editor find/text behavior |
-| Close transient panel/dialog | Escape | Respect component dismissal and unsaved-note handling |
-| Copy text | Standard OS copy | Preserve native selection behavior; explicit verse-copy action is separately focusable |
+| Command                      | Proposed desktop shortcut        | Constraint                                                                               |
+| ---------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------- |
+| Open reference navigation    | Ctrl+K Windows / Command+K macOS | Show in command/help UI; verify OS/WebView collisions                                    |
+| Search Scripture             | Ctrl+F / Command+F               | Focus app search from non-editing reader context; do not steal editor find/text behavior |
+| Close transient panel/dialog | Escape                           | Respect component dismissal and unsaved-note handling                                    |
+| Copy text                    | Standard OS copy                 | Preserve native selection behavior; explicit verse-copy action is separately focusable   |
 
 Shortcut hints follow the actual platform. No shortcut is the only way to perform an action. Do not bind single-letter global shortcuts in V1. Browser development may retain browser-reserved shortcuts; core controls remain usable without shortcut parity.
 

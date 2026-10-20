@@ -1,4 +1,4 @@
-import type { Note, Preferences, ReadingPosition } from './notes';
+import type { Note, Preferences, ReadingPosition } from "./notes";
 import type {
   BookSummary,
   ChapterContent,
@@ -7,7 +7,7 @@ import type {
   ReferenceResolution,
   SearchRequest,
   SearchResults,
-} from './scripture';
+} from "./scripture";
 
 export interface ScriptureLibrary {
   listEditions(): Promise<Edition[]>;
@@ -30,6 +30,6 @@ export interface UserStore {
 export interface AppServices {
   library: ScriptureLibrary;
   userStore: UserStore;
-  runtime: 'browser' | 'tauri';
+  runtime: "browser" | "tauri";
   platform: { copyText(text: string): Promise<void> };
 }

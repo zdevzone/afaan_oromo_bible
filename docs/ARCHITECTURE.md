@@ -37,16 +37,16 @@ The browser is a development and interaction-test target, not a second productio
 
 ## Boundaries and dependency direction
 
-| Layer | Owns | Must not do |
-| --- | --- | --- |
-| `src/domain` | Data types, identities, invariants, repository interfaces | Import React, Tauri, IndexedDB or component code |
-| `src/services` | Reference parsing, query parsing, copy formatting, application workflows | Render UI or issue SQL |
-| `src/features` | React composition and feature state, hooks calling services | Access browser/native persistence directly |
-| `src/components` | Licensed UI primitives and shared application compositions | Know Scripture storage or select runtime adapters |
-| `src/adapters/browser` | Fixture reads and IndexedDB transactions | Be imported by the desktop composition path |
-| `src/adapters/tauri` | Typed `invoke` calls and transport validation | Hide failures with a browser fallback |
-| `src-tauri/src` | App-data paths, read-only content handle, user SQLite transactions, scoped native file access | Expose generic SQL or arbitrary filesystem commands |
-| `tools/scripture` | Build-time import, validation, pack manifests and reports | Fetch content at runtime or alter Scripture wording |
+| Layer                  | Owns                                                                                          | Must not do                                         |
+| ---------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `src/domain`           | Data types, identities, invariants, repository interfaces                                     | Import React, Tauri, IndexedDB or component code    |
+| `src/services`         | Reference parsing, query parsing, copy formatting, application workflows                      | Render UI or issue SQL                              |
+| `src/features`         | React composition and feature state, hooks calling services                                   | Access browser/native persistence directly          |
+| `src/components`       | Licensed UI primitives and shared application compositions                                    | Know Scripture storage or select runtime adapters   |
+| `src/adapters/browser` | Fixture reads and IndexedDB transactions                                                      | Be imported by the desktop composition path         |
+| `src/adapters/tauri`   | Typed `invoke` calls and transport validation                                                 | Hide failures with a browser fallback               |
+| `src-tauri/src`        | App-data paths, read-only content handle, user SQLite transactions, scoped native file access | Expose generic SQL or arbitrary filesystem commands |
+| `tools/scripture`      | Build-time import, validation, pack manifests and reports                                     | Fetch content at runtime or alter Scripture wording |
 
 Use explicit functions and constructor arguments. A few ports are sufficient; no service locator, event bus, CQRS layer, generic repository base class, plugin registry, or dependency-injection container is needed.
 

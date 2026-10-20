@@ -1,17 +1,15 @@
 {
   "name": "afaan-oromo-bible",
+  "version": "0.1.0",
   "private": true,
+  "bugs": {
+    "url": "https://github.com/zdevzone/afaan_oromo_bible/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zdevzone/afaan_oromo_bible.git"
   },
-  "bugs": {
-    "url": "https://github.com/zdevzone/afaan_oromo_bible/issues"
-  },
-  "version": "0.1.0",
   "type": "module",
-  "packageManager": "pnpm@10.20.0",
-  "engines": { "node": ">=24.11.0 <25" },
   "scripts": {
     "dev": "vp dev",
     "check": "vp check",
@@ -56,5 +54,9 @@
     "typescript": "5.9.3",
     "varlock": "1.23.0",
     "vite-plus": "1.3.0"
-  }
+  },
+  "engines": {
+    "node": ">=24.11.0 <25"
+  },
+  "packageManager": "pnpm@10.20.0"
 }
