@@ -5,6 +5,7 @@ Status: intended V1 behavior. All features marked required below are release req
 ## Common rules
 
 - V1 runs offline with one authorized installed Bible edition and local user data. No account, remote server, font download, or AI service is required.
+- V1 targets Windows, macOS, and Linux desktop through one React UI and the existing platform ports. Ubuntu 24.04 LTS x86_64 with GNOME is the proposed first qualified Linux environment; [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md) owns the supported distribution/session matrix. Required native qualification is pending until actual results are recorded. Do not create a Linux UI fork or introduce another component library.
 - Scripture display and quotations use canonical imported text; search normalization never changes source text. Editorial source elements remain distinguishable.
 - References include edition and versification identity internally. A verse unit may carry a bridge or subverse label; do not assume every verse label is an integer.
 - Every user write reports success only after durable persistence. Errors retain recoverable input and offer a meaningful retry/recovery action.
@@ -52,6 +53,7 @@ Acceptance:
 - Single/range copy preserves spelling, punctuation, Unicode, verse labels, and source order without search normalization.
 - The selected range is clear visually and to assistive technology; changing chapters clears temporary selection.
 - Clipboard errors provide manual recovery without losing the passage or quotation.
+- Verify standard clipboard copy and ordinary text selection in the qualified Linux GNOME Wayland and X11 sessions, including an unfocused/unavailable clipboard error path. A browser clipboard test does not prove the native session behavior.
 
 ## F04 — Scripture search — required
 
@@ -120,6 +122,7 @@ Acceptance:
 
 - Preferences survive restart and backup/restore; unsupported or invalid values are rejected or reset with a clear fallback.
 - Theme changes, long translated labels, and font changes do not hide essential controls or clip Scripture.
+- On qualified Linux GNOME sessions, system text enlargement, display scaling, high-contrast settings, and explicit app themes retain readable text, visible focus, and usable controls. Verify actual WebKitGTK behavior rather than assuming OS settings map to browser media queries.
 - Required app settings can be reached and changed without a mouse or network.
 
 ## F09 — Reading-position persistence — required
@@ -167,6 +170,7 @@ Acceptance:
 - Export → restore into a clean store round-trips the supported user records and preserves Unicode exactly.
 - Wrong file, malformed/oversized JSON, unknown format, invalid IDs/references, duplicate IDs, cancelled confirmation, failed snapshot, full disk, and interrupted commit cannot destroy the existing committed store.
 - Restore preview accurately describes replacement; the pre-restore snapshot can be used to recover overwritten records.
+- Native choose/save dialogs are keyboard-operable on each desktop target; GNOME Wayland/X11 checks include cancellation, focus return, and a denied/unavailable destination without changes to existing data.
 
 ## F12 — Interface language and source metadata — required
 
@@ -181,18 +185,19 @@ Acceptance:
 
 ## F13 — Accessibility and desktop behavior — required
 
-The complete read → navigate → select/copy → search → annotate → settings → backup/restore workflow must work using keyboard and screen readers. Maintain logical landmarks, focus restoration, status announcements, accessible labels, and visible focus. Native menus/dialogs/clipboard use supported Windows/macOS adapters; browser fixtures use transparent development equivalents. Do not suppress OS selection, zoom, or accessibility capabilities to imitate a mobile interface.
+The complete read → navigate → select/copy → search → annotate → settings → backup/restore workflow must work using keyboard and screen readers on Windows, macOS, and qualified Linux environments. Maintain logical landmarks, focus restoration, status announcements, accessible labels, and visible focus. Native menus/dialogs/clipboard use the existing platform-service boundary for all three desktop targets; browser fixtures use transparent development equivalents. Do not suppress OS selection, zoom, or accessibility capabilities to imitate a mobile interface. Ctrl-based reference/search shortcuts apply to Windows and Linux; macOS uses Command equivalents. Verify GNOME/OS shortcut conflicts and retain visible controls for every action.
 
 Desktop window close with unsaved notes offers an appropriate save/discard/cancel path supported by the verified Tauri API. A public build must use the tested platform path; an unverified API assumption is not an implemented requirement. Failures saving on close cannot be reported as successful shutdown saves. Ordinary committed reading requires no startup network permission or sign-in.
 
 Acceptance:
 
-- Manual Windows NVDA and macOS VoiceOver checks pass the core workflow in packaged builds, including modal focus and file dialogs.
+- Manual Windows NVDA, macOS VoiceOver, and Linux Orca/AT-SPI checks pass the core workflow in packaged builds, including modal focus and file dialogs. Linux checks cover the qualified GNOME Wayland and X11 sessions; compilation or browser-only checks do not count as this evidence. Actual qualification results remain pending until recorded.
 - Light/dark/system, enlarged text, reflow/zoom, reduced motion, and high contrast retain access to all required actions.
 - Permission-denied clipboard/filesystem cases produce visible recovery and do not crash the reader.
+- Linux clipboard, native-dialog cancellation/focus return, system font/display scaling, and high-contrast behavior are exercised on the release matrix without a separate Linux presentation implementation or new UI dependencies.
 
 ## Optional enhancements and future boundaries
 
-The required list above is the V1 bar, including note autosave with truthful durability feedback and explicit Save. Additional shortcuts and broader personal-note sort/filter controls are optional refinements. Reading plans, rich text, arbitrary text-range annotations, sermons, service workspaces, commentaries, parallel editions, advanced search, AI, accounts, synchronization, telemetry, and other platforms follow the milestones in [ROADMAP.md](ROADMAP.md). Do not add placeholder architectures or nonfunctional controls for them during the reader phase.
+The required list above is the V1 bar, including note autosave with truthful durability feedback and explicit Save, on Windows, macOS, and qualified Linux environments. Additional shortcuts and broader personal-note sort/filter controls are optional refinements. Reading plans, rich text, arbitrary text-range annotations, sermons, service workspaces, commentaries, parallel editions, advanced search, AI, accounts, synchronization, telemetry, and platforms beyond these three desktop targets follow the milestones in [ROADMAP.md](ROADMAP.md). Do not add placeholder architectures or nonfunctional controls for them during the reader phase.
 
-V1 completion additionally requires the content-rights, corpus integrity, performance, accessibility, backup recovery, and signed-installer gates defined in [MVP_SCOPE.md](MVP_SCOPE.md), [TESTING_STRATEGY.md](TESTING_STRATEGY.md), and [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md).
+V1 completion additionally requires the content-rights, corpus integrity, performance, accessibility, backup recovery, and platform packaging/integrity gates defined in [MVP_SCOPE.md](MVP_SCOPE.md), [TESTING_STRATEGY.md](TESTING_STRATEGY.md), and [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md).

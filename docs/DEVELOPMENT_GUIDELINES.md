@@ -41,7 +41,7 @@ command -v rustup
 
 On PowerShell, use `Get-Command vp,node,rustc,cargo,rustup -ErrorAction SilentlyContinue`. An absent command is a missing prerequisite, not a successful check. Once installed, inspect `vp --version`, `vp env current`, `vp toolchain`, `rustc --version`, and `cargo --version`; retain concise results in setup/status. Avoid raw `env`, `printenv`, or secret-bearing Varlock output in logs.
 
-The current Linux workspace has Vite+, Node, pnpm and Rust installed. Its tools and caches are session-local under ignored `.tooling/`; source `. /workspace/.tooling/session-env.sh` in this managed workspace if the tools are absent from the shell's `PATH`. This machine-specific setup is not an application dependency. GTK3/WebKit2GTK 4.1 prerequisites remain missing, so a headless SQLite test pass does not establish a desktop launch. Prepare the documented native prerequisites on Windows/macOS before claiming target-platform validation. See [TECH_STACK.md](TECH_STACK.md).
+The current Linux workspace has Vite+, Node, pnpm and Rust installed. Its tools and caches are session-local under ignored `.tooling/`; source `. /workspace/.tooling/session-env.sh` in this managed workspace if the tools are absent from the shell's `PATH`. This machine-specific setup is not an application dependency. Linux native builds require GTK3 and WebKitGTK 4.1 development prerequisites; their current installation status belongs to the root [README.md](../README.md#current-status). Prepare the documented prerequisites separately on Windows, macOS and Linux before claiming target-platform validation. End users need no Node or Rust installation. See [TECH_STACK.md](TECH_STACK.md).
 
 Use one package manager and its committed lockfile. Global `vp` is convenient, but the exact project-local `vite-plus` version controls builds. After a clean checkout:
 
@@ -61,7 +61,7 @@ Varlock validates Vite configuration through its plugin. Keep checked-in default
 
 Use one React application and one set of application ports. Browser JSON/IndexedDB adapters implement the same observable operations as the native adapter; they are development infrastructure, with contract tests for shared semantics. Compose the selected adapters once at startup. UI components must not inspect a platform flag and choose their own persistence code.
 
-Use browser development for UI, navigation, reference parsing, note interactions, and failure states. Test the first native vertical slice during Phase 1: read → navigate → search → write note → close → reopen. Repeat on Windows and macOS. Browser success does not satisfy a native persistence milestone. A Linux compile also does not satisfy the Windows/macOS gate.
+Use browser development for UI, navigation, reference parsing, note interactions, and failure states. Test the first native vertical slice during Phase 1: read → navigate → search → write note → close → reopen. Repeat on Windows, macOS and the Linux qualification baseline; include native clipboard behavior. Linux is required for V1, with Ubuntu 24.04 LTS x86_64/GNOME as the proposed initial qualification baseline. Browser success and headless Rust tests do not demonstrate a desktop launch. A successful Linux desktop run proves only its recorded environment; Windows/macOS gates remain separate.
 
 Routine frontend commands are:
 
@@ -91,6 +91,8 @@ vp run desktop:check
 ```
 
 `tools/native.mjs` sets `APP_TARGET=tauri` before Tauri starts the renderer hooks and explicitly enables the internal `development-content` feature. `desktop:check` compiles without bundling; it is not a signed release check. Do not bypass this selection by invoking the raw Tauri CLI with the default browser target. `vp run public:build` deliberately rejects public packaging until the authorized-content pipeline and release gates exist.
+
+Use `.deb` as the primary planned Linux V1 package and qualify it on a clean baseline host: installation with declared runtime dependencies, native launch, offline reading, persistence/restart, clipboard, backup/restore and the package lifecycle checks in [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md). Do not claim the package contains a complete system WebKit or supports untested Linux distributions. Keep all data paths resolved through Tauri rather than adding hard-coded Unix locations.
 
 `vp dev/build/test` run built-ins; `vp run <name>` runs a named project script. The current Tauri hooks call the built-ins after the outer wrapper selects the target. Keep that environment boundary intact and avoid recursive script calls. See [Vite+ build behavior](https://viteplus.dev/guide/build).
 
@@ -135,4 +137,4 @@ A change is reviewable when its acceptance criteria pass, obsolete paths are gon
 
 Keep commits focused and descriptions concrete: resulting behavior, significant decision, verification, and any remaining limitation. Do not weaken checks or delete failing scenarios to obtain a green result. Fix the cause or record a genuine external blocker with the next action.
 
-The documentation foundation is established and Phase 1 source is present. Complete the remaining native vertical-slice and unsaved-draft close requirements before declaring Phase 1 finished; the root [README.md](../README.md#current-status) owns the current evidence and next actions. Do not use passed browser or headless checks to imply completion of the Windows/macOS gate.
+The documentation foundation is established and Phase 1 source is present. Complete the remaining native vertical-slice and unsaved-draft close requirements on Windows, macOS and the Linux qualification baseline before declaring Phase 1 finished; the root [README.md](../README.md#current-status) owns the current evidence and next actions. Do not use passed browser or headless checks to imply completion of any desktop platform gate.

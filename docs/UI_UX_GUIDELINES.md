@@ -2,6 +2,8 @@
 
 Status: approved design direction and behavior constraints. Specific licensed blocks, fonts, final colors, and Oromo wording require the verification identified below. Feature behavior is owned by [FEATURE_SPECIFICATIONS.md](FEATURE_SPECIFICATIONS.md).
 
+V1 targets Windows, macOS, and Linux desktop using the same React UI and design system. Ubuntu 24.04 LTS x86_64 with GNOME is the proposed first qualified Linux environment; the authoritative distribution/session matrix and qualification evidence belong to [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md). Target inclusion is a requirement, not a claim that native accessibility or platform integration has passed.
+
 ## Reading comes first
 
 The primary screen is an open Bible: book/chapter controls, a readable Scripture column, and unobtrusive study actions. Bookmarks, notes, and search support returning to a passage. Do not introduce dashboard cards, engagement scores, a marketing hero, or a large empty welcome screen into the reading flow.
@@ -40,9 +42,11 @@ This is an inspection checklist, not a claim that these components have been ins
 
 Use semantic HTML inputs through styled components; “avoid native browser-styled controls” does not prohibit accessible HTML semantics. Use the shared Select/Popover patterns where available. Highlights use a bounded palette; V1 needs neither a free-form color picker nor a date picker. Native OS file dialogs are appropriate for desktop backup destinations.
 
+On the qualified Linux environment, test GNOME file dialogs and standard clipboard operations in Wayland and X11 sessions. Opening/cancelling a file dialog must retain the draft and return focus to a useful app control. Explicit Copy targets the standard clipboard; ordinary text selection retains the desktop's expected behavior. Handle compositor/session clipboard denial or unavailability through the shared error/recovery UI. Keep these operations behind the existing platform ports; do not create a Linux UI fork or add dependencies solely to vary presentation.
+
 ## Layout and responsiveness
 
-Use one React tree with responsive compositions, not separate browser and desktop applications. The same layout must work with text enlargement and a resized desktop window. Breakpoints below are initial design values, adjusted after actual content testing.
+Use one React tree with responsive compositions across Windows, macOS, Linux, and browser development. The same layout must work with text enlargement and a resized desktop window. Breakpoints below are initial design values, adjusted after actual content testing.
 
 | Available width       | Reader layout                                                                                                                                            |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -82,6 +86,8 @@ All components need default, hover, focus-visible, active, disabled, loading, em
 
 Highlights use a small named palette, paired with text labels and an accessible selected state. Never communicate selected verses, save failures, or validation results using color alone. Keep OS high-contrast/forced-color behavior legible; do not erase focus outlines globally.
 
+For Linux qualification, test GNOME high-contrast settings, enlarged system text, and display scaling in the actual WebKitGTK application on Wayland and X11. Do not assume a GNOME setting necessarily activates the browser's `forced-colors` or color-scheme media query. Verify actual rendering, focus indicators, font fallback/Oromo glyphs, dialogs, and reflow; use the shared tokens and accessible controls to resolve issues. Record any unsupported automatic theme detection honestly while preserving explicit Light/Dark choices.
+
 ## Reading interactions
 
 Preserve normal text selection, copy, and screen-reader reading order. Provide a focusable verse-selection action associated with each verse unit, named with its full reference. It selects the whole source verse unit; bridges/subverses keep their source labels. Explicit “Copy selected verses,” bookmark, highlight, and note actions operate on these selections. Do not turn every word into an interactive element or intercept ordinary copy when text is selected.
@@ -98,18 +104,18 @@ Use semantic `header`, navigation, `main`, headings, lists, and form labels. Pro
 
 Every required action must work with Tab/Shift+Tab, Enter/Space, appropriate arrow-key behavior inside verified components, and Escape to close transient UI. Do not use positive tabindex or a custom global arrow-key handler that breaks text selection or screen-reader navigation. Trap focus among all available controls inside a modal dialog and make the background inert; restore focus on close. Preserve a logical reading order when visual panes move.
 
-| Command                      | Proposed desktop shortcut        | Constraint                                                                               |
-| ---------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------- |
-| Open reference navigation    | Ctrl+K Windows / Command+K macOS | Show in command/help UI; verify OS/WebView collisions                                    |
-| Search Scripture             | Ctrl+F / Command+F               | Focus app search from non-editing reader context; do not steal editor find/text behavior |
-| Close transient panel/dialog | Escape                           | Respect component dismissal and unsaved-note handling                                    |
-| Copy text                    | Standard OS copy                 | Preserve native selection behavior; explicit verse-copy action is separately focusable   |
+| Command                      | Proposed desktop shortcut              | Constraint                                                                               |
+| ---------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Open reference navigation    | Ctrl+K Windows/Linux / Command+K macOS | Show in command/help UI; verify OS/WebView and GNOME session shortcut collisions         |
+| Search Scripture             | Ctrl+F Windows/Linux / Command+F macOS | Focus app search from non-editing reader context; do not steal editor find/text behavior |
+| Close transient panel/dialog | Escape                                 | Respect component dismissal and unsaved-note handling                                    |
+| Copy text                    | Standard OS copy                       | Preserve native selection behavior; explicit verse-copy action is separately focusable   |
 
 Shortcut hints follow the actual platform. No shortcut is the only way to perform an action. Do not bind single-letter global shortcuts in V1. Browser development may retain browser-reserved shortcuts; core controls remain usable without shortcut parity.
 
 Announce chapter navigation, search completion, and save/restore status through restrained live regions. Avoid announcing every scroll event, keystroke, or debounce. Search counts use a status message after results settle. Errors are persistent, descriptive, and programmatically associated with their control; toast messages alone are insufficient for failed saves.
 
-Acceptance requires manual keyboard testing, Windows screen-reader testing with NVDA, and macOS VoiceOver testing in actual Tauri builds. Automated accessibility checks supplement these checks. Include enlarged text, 200% and 400% zoom/reflow, reduced motion, light/dark/system, and a high-contrast mode. Track findings in the normal issue list; the release gate lives in [TESTING_STRATEGY.md](TESTING_STRATEGY.md).
+Acceptance requires manual keyboard testing in all three desktop targets, Windows screen-reader testing with NVDA, macOS testing with VoiceOver, and Linux testing with Orca through AT-SPI in actual Tauri builds. On the qualified GNOME environment, exercise Wayland and X11: verify reading order, verse labels/selection, search announcements, editor saves, modal focus, and native file-dialog return focus. These native results remain pending until recorded; browser tests or a Linux compilation do not establish them. Automated accessibility checks supplement these checks. Include enlarged text, 200% and 400% zoom/reflow, reduced motion, light/dark/system, and high contrast, with Linux system-font/display scaling as described above. Track findings in the normal issue list; the release gate lives in [TESTING_STRATEGY.md](TESTING_STRATEGY.md).
 
 ## Content, status, and error wording
 
@@ -121,7 +127,8 @@ English and Afaan Oromo interface catalogs are separate from source Bible metada
 
 ## Design acceptance gate
 
-- A reader can open, navigate, select/copy, search, annotate, change preferences, and back up data with keyboard alone in both desktop platforms.
+- A reader can open, navigate, select/copy, search, annotate, change preferences, and back up data with keyboard alone on Windows, macOS, and the qualified Linux environments.
+- Native NVDA, VoiceOver, and Orca/AT-SPI evidence is recorded for the release matrix; GNOME Wayland/X11 clipboard, dialogs, focus, high contrast, and font/display scaling have actual results rather than assumed parity.
 - The passage remains the visual focus at supported window sizes and zoom levels; all panels have a clear close/return path.
 - Final tokens, highlight combinations, local fonts, screen-reader flows, and licensed component provenance have been checked.
 - No production view presents synthetic content as Scripture, unavailable features as working controls, or failed persistence as success.

@@ -1,6 +1,6 @@
 # Storage strategy
 
-Status: **approved V1 architecture**. Use one React application with small asynchronous storage ports. Desktop uses narrow Rust commands backed by `rusqlite` and bundled SQLite with verified FTS5 support. Browser development uses normalized JSON fixtures and native IndexedDB. No backend, ORM, generic SQL IPC, SQLite WASM runtime, or second SQL plugin is needed.
+Status: **approved V1 architecture** for Windows, macOS and Linux desktop. Use one React application with small asynchronous storage ports. Desktop uses narrow Rust commands backed by `rusqlite` and bundled SQLite with verified FTS5 support. Browser development uses normalized JSON fixtures and native IndexedDB. No backend, ORM, generic SQL IPC, SQLite WASM runtime, or second SQL plugin is needed.
 
 ## Why SQLite plus JSON
 
@@ -27,7 +27,7 @@ Commands accept typed domain requests, not SQL strings, file paths or renderer-c
 
 ## Desktop files and connections
 
-Resolve Tauri's per-user application data directory through its supported path APIs. Do not hard-code OS paths, write in the installation directory or use the frontend's current working directory.
+Resolve Tauri's per-user application data directory through its supported path APIs on Windows, macOS and Linux. Do not hard-code OS paths, including Unix home/XDG directory strings, write in the installation directory or use the frontend's current working directory. Resolve packaged resources independently of writable user storage so a Linux `.deb` installation never needs write access to its installed application files.
 
 ```text
 <packaged resources>/content/library.sqlite      immutable approved content
@@ -39,7 +39,7 @@ Resolve Tauri's per-user application data directory through its supported path A
 
 The path layout is conceptual until packaging tests resolve platform resource handling. If a bundled resource cannot be opened directly as a filesystem SQLite file, copy it into a checksum-named app-data content directory, verify it, then open it read-only. Treat it as replaceable derived content and keep it separate from `user.sqlite`. Do not blindly copy it over on every launch.
 
-Use `rusqlite`'s bundled SQLite feature, pin it in `Cargo.lock`, and verify `ENABLE_FTS5` and a real FTS query in the native spike. Do not assume the system SQLite on macOS/Windows has identical features. Open the library connection with SQLite read-only flags; optionally add `query_only` as defense in depth. An immutable URI optimization is permitted only if the artifact truly cannot change while that connection is open. Handle edition replacement by closing and reopening a validated artifact.
+Use `rusqlite`'s bundled SQLite feature, pin it in `Cargo.lock`, and verify `ENABLE_FTS5` and a real FTS query in the native spike. Do not assume the system SQLite on Windows, macOS or Linux has identical features. Bundled SQLite is separate from Linux's GTK/WebKit runtime dependencies; it does not make the complete desktop package self-contained. Open the library connection with SQLite read-only flags; optionally add `query_only` as defense in depth. An immutable URI optimization is permitted only if the artifact truly cannot change while that connection is open. Handle edition replacement by closing and reopening a validated artifact.
 
 Open the mutable user connection separately. Enable foreign keys, a bounded busy timeout and WAL mode on the local user database; prefer `synchronous=FULL` for note durability and measure the cost. An approved change to this durability choice needs a failure/recovery assessment. Keep transactions short. A serialized native database worker owns the connections, or use another equally small serialized design; do not block the async runtime with long synchronous SQLite work. Do not introduce a connection pool without evidence.
 
@@ -98,11 +98,11 @@ Forward-compatible acceptance is not promised. Before V1 obsolete development ba
 
 ## Operational acceptance
 
-- Network-disabled read/search/note/restart works on supported Windows/macOS targets with a read-only content artifact and writable user data.
+- Network-disabled read/search/note/restart works on supported Windows, macOS and Linux targets with a read-only content artifact and writable user data. The proposed initial Linux qualification baseline is Ubuntu 24.04 LTS x86_64/GNOME, using the primary planned `.deb` package; arbitrary distribution support is not implied.
 - Restart after a successful save preserves the record; forced termination cannot leave half a note/link or half a restore. Save failure never becomes a success indicator.
 - Export→restore into a clean profile reproduces all user records, selections, settings and unresolved anchors. No bundled Scripture corpus/projection is embedded in backup payloads; user-authored note text remains intact, including any quotations the user typed.
 - Malformed, oversized, unsupported and inconsistent backups are rejected without writes. Restore cancellation, snapshot failure, transaction failure, missing editions and post-restore reload are tested.
 - Browser and desktop meet the same observable port contract, with their durability differences documented. Public desktop builds cannot select fixture storage.
-- SQLite, WAL/sidecar placement, resource copying, file dialogs and backup replacement are tested on actual target operating systems; a Linux/browser run is insufficient release evidence.
+- SQLite, WAL/sidecar placement, resource copying, file dialogs and backup replacement are tested on actual target operating systems, including a clean Linux package installation. A headless Rust or browser run does not demonstrate a native launch, and a Linux desktop pass does not substitute for Windows/macOS evidence.
 
 See [DATA_MODEL.md](DATA_MODEL.md) for records, [TESTING_STRATEGY.md](TESTING_STRATEGY.md) for test ownership, and [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md) for the V1 compatibility transition.

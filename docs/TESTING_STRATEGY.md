@@ -1,6 +1,6 @@
 # Testing strategy
 
-Status: approved test approach; platform support and performance budgets remain subject to [PRD.md](PRD.md) and the gates in [MVP_SCOPE.md](MVP_SCOPE.md) and [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md). A passing browser build does not establish desktop readiness.
+Status: approved test approach for the required Windows, macOS and Linux V1 targets; qualification details and performance budgets remain subject to [PRD.md](PRD.md) and the gates in [MVP_SCOPE.md](MVP_SCOPE.md) and [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md). Initial Linux qualification is proposed for Ubuntu 24.04 LTS x86_64 with GNOME. A passing browser build or headless Rust suite does not establish desktop readiness on any platform.
 
 ## Test the product's risks
 
@@ -19,7 +19,7 @@ Default tooling is Vitest through Vite+, React Testing Library with user-event, 
 | Content integrity  | Authorized source provenance, checksums, structure, text preservation, declared marker handling, content manifest, attribution                    | Every content-pack build                                   |
 | Browser journeys   | First launch → read → navigate → search → annotate → reload; settings; keyboard use; backup/restore                                               | Pull requests touching the journey; full suite before beta |
 | Native integration | Real Tauri IPC, app-data paths, SQLite/FTS5 availability, restart, clipboard, file dialogs, backup/restore, no production browser adapter         | Early Phase 1 and before each candidate                    |
-| Native release     | Installed signed artifacts on Windows/macOS; clean/offline installation; upgrades after V1.0; permissions; uninstall behavior                     | Every release candidate                                    |
+| Native release     | Installed Windows/macOS signed bundles and authenticated Linux `.deb`; prerequisite/offline behavior; upgrades after V1.0; permissions; uninstall | Every release candidate                                    |
 
 Run fast checks on changes and the full relevant suite before a milestone. Broaden testing when changes affect additional boundaries; do not rerun every unrelated test after documentation-only edits. Record blocked tests as blocked, with the missing environment or input.
 
@@ -61,7 +61,7 @@ For pre-V1 development schemas, test the current schema and an explicit develope
 
 Check light/dark/system themes, visible focus, contrast, text enlargement and reflow at the minimum window size defined by the UX specification. No Bible-reading action may require a mouse, color recognition or a hover-only affordance. Test a complete keyboard journey including dialog dismissal, focus return, book/chapter navigation, verse selection, search, note editing and backup controls.
 
-Run automated scans on the reader, navigation dialogs, search results, note editor and settings. Manually test NVDA with Windows and VoiceOver with macOS. Verify accessible names, selected verse announcement, heading structure, modal focus containment, live save/search status, reduced-motion behavior, and the absence of focus loss after passage changes. Verify text rendering and line breaks with Oromo content. Keyboard shortcuts must not intercept ordinary typing or assistive-technology commands.
+Run automated scans on the reader, navigation dialogs, search results, note editor and settings. Manually test NVDA with Windows, VoiceOver with macOS, and Orca through AT-SPI with the packaged Linux app. On Linux verify that the WebKitGTK accessibility tree reaches AT-SPI and Orca in the actual GNOME desktop session; an accessible browser page or a running Orca process alone does not prove this bridge works. Verify accessible names, selected verse announcement, heading structure, modal focus containment, live save/search status, reduced-motion behavior, and the absence of focus loss after passage changes. Verify text rendering and line breaks with Oromo content. Keyboard shortcuts must not intercept ordinary typing or assistive-technology commands.
 
 Manual checks also cover a long chapter, footnote/cross-reference reading, copying multiline selections with the correct attribution, screen scaling, font fallback, and clear separation between Scripture and personal notes. Record issue severity and affected scenario; an automated accessibility score alone is insufficient.
 
@@ -71,9 +71,25 @@ Browser automation runs the same React application against explicitly selected d
 
 Validate Tauri early with a real read → navigate → search → note → restart slice. Native tests must exercise the Rust commands and actual file locations, plus confirm that the content database opens read-only and that the bundled SQLite supports FTS5. Browser contract tests cannot prove these facts.
 
-For native UI automation, use the current [Tauri WebDriver testing documentation](https://v2.tauri.app/develop/tests/webdriver/) to choose the platform route. Windows can use `tauri-driver` with a compatible Edge WebDriver; current Tauri documentation also describes embedded WebdriverIO automation for macOS. Verify availability and version compatibility before pinning the harness. Do not categorically mark macOS automation unsupported. Maintain manual signed-app smoke tests on both operating systems even with automation. Linux testing is useful during development but does not satisfy either release gate.
+For native UI automation, use the current [Tauri WebDriver testing documentation](https://v2.tauri.app/develop/tests/webdriver/) to choose the platform route. Windows can use `tauri-driver` with a compatible Edge WebDriver; Linux can use `tauri-driver` with the matching WebKitGTK WebDriver where supported; current Tauri documentation also describes embedded WebdriverIO automation for macOS. Verify availability and version compatibility before pinning each harness. Do not categorically mark macOS automation unsupported. Keep manual installed-app smoke and assistive-technology tests on all three platforms. A headless Linux job cannot replace its desktop-session gate, and Linux results do not establish Windows/macOS behavior.
 
-The initial environment has no established Rust/Cargo or Linux GTK/WebKit readiness and cannot establish Windows/macOS behavior. Record actual tool checks in the implementation handoff, install prerequisites where authorized, and report desktop checks as blocked until they run. Do not convert missing native tooling into a claim that native integration passes.
+Rust/Cargo and headless SQLite repository checks now work in the development environment, but the full Tauri application has not completed a native launch. This Linux host still lacks the GTK/WebKit desktop prerequisites, and Windows/macOS target evidence remains pending. Record actual tool checks in the implementation handoff, install prerequisites where authorized, and report each desktop check as blocked until it runs. Do not convert passing headless tests or missing native tooling into a claim that native integration passes.
+
+## Linux desktop and package qualification
+
+Linux is a required V1 release gate. Qualify the initial Ubuntu 24.04 LTS x86_64 GNOME `.deb` on clean supported installations, using the oldest supported distribution as the build baseline to constrain glibc/system-library requirements. Confirm the actual GTK 3, WebKitGTK 4.1 and selected plugin runtime dependencies generated into the package. Record package versions and build/runtime distribution versions; a container build is not evidence that desktop integration works.
+
+Run the following on **both GNOME X11 and Wayland sessions**, recording the session and the application's actual display backend, including any XWayland use:
+
+- Install the downloaded `.deb` through the documented package-manager route with and without missing dependencies. Verify prerequisite diagnostics, desktop launcher/icon, startup, and the guarantee of offline operation after dependencies are installed. Test disconnected installation only for artifacts advertised as fully offline installers.
+- Exercise read → navigate → search → linked note → save → native close/restart → reopen against real Tauri IPC and SQLite/FTS5. Confirm content is read-only, user data has the correct per-user path/permissions, failed saves retain drafts, and Save/Discard/Cancel on native close behaves truthfully.
+- Verify clipboard copy with another desktop application, native open/save dialogs, focus return, Unicode filesystem paths, missing/unwritable destinations, theme changes, scaling, font fallback and Oromo glyph/line rendering. Do not infer Wayland clipboard/dialog behavior from an X11 run.
+- Export and restore user data, repeat with unavailable editions, and inject permission/disk-write failures without erasing earlier records. Verify the pre-restore recovery snapshot and atomic replacement on the installed application.
+- Run the core keyboard and Orca/AT-SPI journeys, including modal controls and native dialogs. Confirm the actual WebKitGTK accessible content, selection/status announcements and focus behavior in each session; record unresolved bridge defects as release blockers.
+- Remove, reinstall and replace the package, verifying that system files/launcher are handled correctly and personal records remain unless the user explicitly chooses their removal. Reopen persisted notes and preferences after reinstall. Public-version schema changes additionally require the migration tests above.
+- Verify the downloaded package checksum and independently verifiable manifest/package signature using the published release-key procedure. A plain checksum does not authenticate the publisher, and a standalone `.deb` is not automatically verified by APT.
+
+Additional distributions, Linux ARM and AppImage are outside the initial qualification matrix. Add them only after explicit compatibility, dependency, session, accessibility and packaging tests; a bundler output alone is insufficient evidence. Linux failure leaves the V1 gate open alongside the Windows/macOS gates.
 
 ## Performance, privacy and release evidence
 
@@ -81,4 +97,4 @@ Measure the budgets in [PRD.md](PRD.md) using an agreed reference machine, packa
 
 Verify Tauri capabilities and commands expose only required operations; reject arbitrary path/SQL arguments, render notes as text, and keep secrets out of frontend bundles, backups and logs. The V1 app must not initiate AI or synchronization requests. Logs must omit note bodies and Scripture excerpts unless an explicit local diagnostic flow discloses and authorizes them.
 
-Each release candidate retains a concise evidence checklist: exact commit and content hash, dependency lockfile, passing commands/reports, OS/architecture and hardware, accessibility reviewer results, licensing disposition, installer signatures, offline scenarios, restore drill and known issues. V1 release requires no unresolved release-blocking issue, no unreviewed rights restriction and no missing native-platform evidence. The release checklist is owned by [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md).
+Each release candidate retains a concise evidence checklist: exact commit and content hash, dependency lockfile, passing commands/reports, OS/architecture and hardware, Linux distribution/runtime versions and X11/Wayland results, accessibility reviewer results including Orca/AT-SPI, licensing disposition, applicable installer signatures or signed package manifest, offline scenarios, restore drill and known issues. V1 release requires no unresolved release-blocking issue, no unreviewed rights restriction and no missing evidence from Windows, macOS or the qualified Linux matrix. The release checklist is owned by [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md).

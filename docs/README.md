@@ -1,13 +1,13 @@
 # Afaan Oromo Bible — development foundation
 
-Status: architecture baseline established 2026-10-19; Phase 1 implementation is underway. Frontend and headless SQLite checks now pass; the native Windows/macOS reader loop is still pending. See the [current Phase 1 checkpoint and ordered handoff](ROADMAP.md) and the [repository status](../README.md) for measured results. The shared decisions below describe intended V1 behavior, not a claim that every feature exists. The original brief is input; the user's latest choices of **Vite+** and **Varlock** supersede its Vite recommendation.
+Status: architecture baseline established 2026-10-19; Phase 1 implementation is underway. Linux joined Windows/macOS as a required V1 desktop target on 2026-10-20. Frontend and headless SQLite checks now pass; the real native reader loop on Windows, macOS, and Linux is still pending. See the [current Phase 1 checkpoint and ordered handoff](ROADMAP.md) and the [repository status](../README.md) for measured results. The shared decisions below describe intended V1 behavior, not a claim that every feature exists. The original brief is input; the user's latest choices of **Vite+** and **Varlock** supersede its Vite recommendation.
 
 ## Overall plan
 
 1. Establish the tooling, component inventory, content permission register, repository, and an accessible reader shell.
 2. Prove the same React read → navigate → search → note → restart loop in a browser and Tauri early, using conspicuously labeled synthetic test content until an authorized edition is available.
 3. Validate and package one selected edition; complete reader, annotations, settings, and transactional backup/restore.
-4. Test content integrity, Oromo search, accessibility, and failures; validate signed Windows/macOS installers before the first public release, **V1.0**.
+4. Test content integrity, Oromo search, accessibility, and failures; validate Windows/macOS/Linux packages and platform-appropriate authenticity/integrity before the first public release, **V1.0**.
 5. Add translations, study tools, and optional AI only in evidence-driven later milestones.
 
 ## Shared decisions
@@ -18,7 +18,7 @@ These are engineering decisions adopted for planning and the authorized initial 
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Frontend      | One React + TypeScript application; Vite+ (`vp`, project-local `vite-plus`); Tailwind CSS; licensed Shadcnblocks Pro first, underlying shadcn/ui primitives.                                                                                                       |
 | Environment   | Varlock schema and Vite integration; all frontend values public; no reader secrets or backend.                                                                                                                                                                     |
-| Desktop       | Tauri 2; narrow Rust commands using `rusqlite` (bundled SQLite/FTS5); no generic SQL IPC or second ORM/SQL plugin.                                                                                                                                                 |
+| Desktop       | Tauri 2 for Windows/macOS/Linux; narrow Rust commands using `rusqlite` (bundled SQLite/FTS5); no generic SQL IPC or second ORM/SQL plugin.                                                                                                                         |
 | Storage       | One immutable `library.sqlite` built from approved USFM and normalized intermediate JSON; one mutable `user.sqlite`; JSON + IndexedDB browser development adapters behind the same small ports.                                                                    |
 | Content       | One edition for V1; exact edition/canon/audience/rights **verification required**. Never ship invented Scripture. Synthetic fixtures are clearly labeled and excluded from public builds.                                                                          |
 | References    | Stable edition ID + versification ID + stable book code + chapter label + source verse label; ordered verse units may represent bridges/subverses. Cross-edition alignment is never assumed.                                                                       |
@@ -31,6 +31,8 @@ These are engineering decisions adopted for planning and the authorized initial 
 | Milestones    | Phase 0 foundation/decisions; Phase 1 vertical slice; Phase 2 complete reader/content; Phase 3 reliability/beta; Phase 4 V1.0 release. Post-V1: 1.1 editions/parallel prerequisites; 1.2 study workspace; 1.3 optional AI pilot; sync/platforms later on evidence. |
 
 The desktop access choice gives real read-only content handles and atomic user-data transactions at a narrow native boundary. It costs a small Rust repository implementation. Keep it limited to these needs; do not create a backend, dependency-injection framework, or general database protocol.
+
+The proposed initial Linux qualification target is **Ubuntu 24.04 LTS x86_64 with GNOME**, with `.deb` as the primary package. Support floors remain proposed until target testing passes; other distributions and Linux ARM are not yet promised. Linux native launch, restart, accessibility and packaging are V1 release gates. Existing Linux headless SQLite evidence remains useful, but does not establish a real Tauri/WebKitGTK reader loop. The packaging and qualification matrix is owned by [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md).
 
 ## Document map and ownership
 
@@ -58,12 +60,12 @@ When decisions change, update their owning document and this table's affected ba
 
 ## Initial uncertainty register
 
-| Uncertainty                                                             | Owner / resolution point                                              | Safe progress now                                                                                          |
-| ----------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Exact established Oromo edition, intended readers and canon             | Product/content owner before full corpus import/public distribution   | Synthetic fixtures and authorized samples only                                                             |
-| Actual purchased Shadcnblocks source and license terms                  | Design owner before custom alternatives or public source distribution | Inventory official catalog and available files; underlying shadcn primitives for the shell                 |
-| Vite+/Varlock native loading                                            | Engineering during Phase 1                                            | Frontend checks, renderer builds and invalid-target rejection pass; native WebView loading remains pending |
-| Windows/macOS support floor, architectures, signing identities, funding | Release owner before beta                                             | Provisional matrix and untrusted local dev builds only                                                     |
-| Oromo UI wording and search normalization                               | Fluent reviewer before beta                                           | English fallback; no invented confirmed translations                                                       |
+| Uncertainty                                                                   | Owner / resolution point                                              | Safe progress now                                                                                             |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Exact established Oromo edition, intended readers and canon                   | Product/content owner before full corpus import/public distribution   | Synthetic fixtures and authorized samples only                                                                |
+| Actual purchased Shadcnblocks source and license terms                        | Design owner before custom alternatives or public source distribution | Inventory official catalog and available files; underlying shadcn primitives for the shell                    |
+| Vite+/Varlock native loading                                                  | Engineering during Phase 1                                            | Frontend checks, renderer builds and invalid-target rejection pass; native WebView loading remains pending    |
+| Windows/macOS/Linux support floors, architectures, signing/integrity, funding | Release owner before beta                                             | Provisional matrix and untrusted local dev builds only; qualify Ubuntu 24.04 LTS x86_64 GNOME first for Linux |
+| Oromo UI wording and search normalization                                     | Fluent reviewer before beta                                           | English fallback; no invented confirmed translations                                                          |
 
 All dates, benchmark targets and provisional support choices are planning values until measured. Read [ROADMAP.md](ROADMAP.md) last for the ordered **Phase 1 Implementation Plan**.

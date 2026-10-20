@@ -1,10 +1,12 @@
 # Architecture
 
-Status: adopted baseline for Phase 1, 2026-10-19. These are design decisions; platform functionality is proven only by the tests in [TESTING_STRATEGY.md](TESTING_STRATEGY.md). See [README.md](README.md) for decision precedence and open product choices.
+Status: adopted baseline for Phase 1, updated 2026-10-20 to include Linux desktop in V1. These are design decisions; platform functionality is proven only by the tests in [TESTING_STRATEGY.md](TESTING_STRATEGY.md). See [README.md](README.md) for decision precedence and open product choices.
 
 ## System boundary
 
-One React application serves both rapid browser development and the Windows/macOS desktop application. A single composition root selects adapters; features do not detect the runtime or import Tauri APIs. The distributed application needs no account, server, remote font, CDN asset, telemetry endpoint, or network connection to read, search, annotate, or back up local data.
+One React application serves rapid browser development and the Windows, macOS and Linux desktop application. A single composition root selects adapters; features do not detect the runtime or import Tauri APIs. The distributed application needs no account, server, remote font, CDN asset, telemetry endpoint, or network connection to read, search, annotate, or back up local data.
+
+Linux is a required V1 desktop release target. The proposed initial Linux qualification baseline is Ubuntu 24.04 LTS x86_64 with GNOME, with `.deb` as the primary planned package; this does not promise arbitrary distribution or desktop-environment support. Tauri uses GTK3 and WebKitGTK 4.1 on Linux. Build hosts need their development prerequisites, while installed applications rely on declared system runtime dependencies; a `.deb` must not be described as carrying a complete private system WebKit. End users do not install Node or Rust. The detailed package and clean-host qualification gate belongs to [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md).
 
 ```mermaid
 flowchart TB
@@ -12,7 +14,7 @@ flowchart TB
   Services[Application services: references, search, annotations, backups]
   Ports[Small async domain ports]
   Browser[Browser development adapters]
-  Native[Tauri TypeScript adapters]
+  Native[Tauri adapters: Windows / macOS / Linux]
   Commands[Narrow Rust commands and repositories]
   Content[(Read-only library.sqlite and FTS5)]
   User[(Mutable user.sqlite)]
@@ -121,7 +123,7 @@ Search is cancellable/logically superseded and results are paginated in canonica
 
 - Tauri capabilities allow only the main application window and required narrow operations. Omit shell, process and unrestricted filesystem access.
 - Bundle all application code and reading assets. Use a restrictive production CSP. Derive development HMR exceptions from the actual server configuration; do not ship development policy in release builds.
-- Use native user-data paths, not the install directory or repository. No backend, account or credentials are needed for V1. Local data is not encrypted by the application; describe that truthfully in settings/backup help.
+- Resolve per-user application data paths through Tauri on Windows, macOS and Linux; do not hard-code Unix paths or write into the install directory or repository. No backend, account or credentials are needed for V1. Local data is not encrypted by the application; describe that truthfully in settings/backup help.
 - Scope backup dialogs to user-chosen paths, bound file sizes and parse untrusted JSON before mutation. Use temporary files and atomic rename for output; do not copy an active SQLite file.
 - Render plain notes as text. Allow only supported structural Scripture nodes; reject unknown executable content. Escape FTS syntax through a parsed query builder as well as parameterizing SQL values.
 - Varlock validates build-time configuration; frontend values are public. It cannot protect a shared API key embedded in a desktop executable.
@@ -159,4 +161,5 @@ The AI panel can fail, be disabled or be removed without affecting reading, sear
 - A public production desktop build contains no browser adapter imports, test corpus, remote assets or provider secrets. Explicit development desktop builds may use the labeled synthetic pack to prove native integration.
 - Rust opens content read-only and demonstrates that a write attempt fails; user transactions are parameterized and restore is atomic under injected failure.
 - The selected edition's bridges, footnotes, poetry and cross-references survive the importer/display integrity fixtures.
-- Phase 1 proves native startup, SQLite save/reopen and content reads on Windows/macOS before claiming native integration complete. A Linux-only build is useful engineering evidence, not target-platform release proof.
+- Phase 1 proves native startup, SQLite save/reopen, content reads and clipboard behavior on Windows, macOS and the Linux qualification baseline before claiming native integration complete. Browser builds and headless Rust tests do not demonstrate a native window launch. A Linux desktop pass qualifies only the recorded Linux environment; Windows/macOS evidence is separate.
+- Public V1 includes a clean-host Linux `.deb` install/launch, offline reader and persistence/backup checks, and the package lifecycle checks in [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md). Passing a development launch alone does not satisfy packaging qualification.

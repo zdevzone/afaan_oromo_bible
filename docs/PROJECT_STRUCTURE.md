@@ -73,7 +73,8 @@ Status: Phase 1 scaffold established as one application. The tree shows the curr
 │   ├── Cargo.toml
 │   ├── Cargo.lock
 │   ├── build.rs
-│   ├── tauri.conf.json
+│   ├── tauri.conf.json         # Shared desktop window/security and platform bundle settings
+│   ├── tauri.linux.conf.json   # Automatically merged Linux .deb target override
 │   ├── capabilities/default.json
 │   ├── icons/                 # Required development PNG/ICO; production identity pending
 │   ├── resources/             # Future authorized library pack and notices
@@ -96,11 +97,13 @@ Keep unit tests beside the behavior they verify; use shared `tests/` only for cr
 
 Keep native APIs in `src/adapters/tauri` and Rust repositories. A reader component receives a service or a hook that already has it; it never imports `invoke`, `indexedDB`, `localStorage`, SQLite, or checks `window.__TAURI__`. Browser-only dynamic imports belong in the composition root and must be omitted from native release output.
 
+Windows, macOS and Linux use these same React features, Tauri adapters and Rust repositories. Do not create a separate Linux application or storage implementation. Linux is a required V1 target; the proposed initial qualification baseline is Ubuntu 24.04 LTS x86_64/GNOME, with `.deb` as the primary planned artifact. Keep platform package configuration under `src-tauri` and native build/test CI under `.github/workflows` as implemented. The support and package gates are owned by [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md), not inferred from the presence of a Linux configuration file.
+
 Copy licensed components into `src/components/ui` or an appropriately named subfolder after reviewing actual source. Track provenance and access restrictions in the component inventory section of [UI_UX_GUIDELINES.md](UI_UX_GUIDELINES.md). Do not publish the paid component source in a public repository without confirming that the purchased terms authorize it. The finished application may include components as permitted by that license.
 
 Content source archives, generated packs and permission correspondence are separate from the application source. Ignore raw private records, local databases, backups and credential files. Keep small redistributable fixtures and non-secret manifests in source control. Do not commit a real user's notes or a complete publisher archive simply to make a test reproducible.
 
-Use app-local data directories resolved by Tauri. Keep `library.sqlite`, `user.sqlite` and pre-restore recovery files there; these are runtime paths, not files under `src-tauri/resources`. Bundled content is copied/verified or opened at a resolved read-only path according to [STORAGE_STRATEGY.md](STORAGE_STRATEGY.md).
+Use per-user application data directories resolved by Tauri on all three desktop platforms; do not hard-code Linux/Unix paths. Keep `library.sqlite`, `user.sqlite` and pre-restore recovery files there; these are runtime paths, not files under `src-tauri/resources`. Bundled content is copied/verified or opened at a resolved read-only path according to [STORAGE_STRATEGY.md](STORAGE_STRATEGY.md).
 
 ## Dependency and module growth
 

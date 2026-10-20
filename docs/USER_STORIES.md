@@ -2,6 +2,8 @@
 
 Status: implementation scenarios for [MVP_SCOPE.md](MVP_SCOPE.md). Stories marked V1 are required; future stories are explicitly excluded from V1. Real-content tests require the exact authorized edition. Until then use conspicuously labeled synthetic fixtures without inventing biblical quotations.
 
+These V1 journeys apply to Windows, macOS, and Linux. The proposed initial Linux qualification target is Ubuntu 24.04 LTS x86_64 with GNOME; other distributions and Linux ARM are not yet promised. Support floors and package qualification remain subject to target testing under [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md).
+
 ## U-01 — Resume a quiet reading session · V1
 
 **As an everyday reader, I want the app to reopen where I left off so I can continue reading without setup.**
@@ -13,6 +15,7 @@ Acceptance:
 - Given a confirmed saved reading position, reopening shows the same edition/book/chapter and restores the verse position when available.
 - Font size, line spacing, text width and theme survive restart independently of the reading position.
 - With network access blocked, the bundled edition and local notes still work.
+- Demonstrate the installed Tauri read/save/close/restart journey on each target platform; a browser or headless SQLite result does not prove a native launch.
 - First launch opens a sensible initial chapter from the edition metadata and identifies the edition; it never assumes a universal canon.
 - If saved content is unavailable, explain it and offer valid navigation. Preserve the anchor rather than silently relinking to a different edition.
 
@@ -115,6 +118,7 @@ Acceptance:
 - The replacement is transactional. A malformed, incompatible or interrupted restore cannot leave half-restored records.
 - A clean installation with the same edition resolves restored anchors. A missing edition leaves records intact with a visible unavailable-content state.
 - A restore round-trip compares full records and references, not merely the number of notes.
+- Include Windows, macOS, and qualified Linux installations in the portable-data round-trip matrix; private records and edition-aware anchors retain their meaning across platforms.
 
 ## U-09 — Read using a keyboard and screen reader · V1
 
@@ -127,7 +131,7 @@ Acceptance:
 - Opening a dialog moves focus appropriately; Escape/cancel closes it and restores focus; background content cannot trap or steal focus.
 - Search counts, save failures and validation errors are announced without reading every keystroke or re-announcing the whole chapter.
 - Text remains usable at 200% zoom and in a narrow desktop window, with no loss of core controls.
-- Record manual checks with NVDA on Windows and VoiceOver on macOS, plus automated checks and visible-focus/contrast review. Automated scans alone do not establish conformance.
+- Record manual checks with NVDA on Windows, VoiceOver on macOS, and Orca on the qualified Linux GNOME target, plus automated checks and visible-focus/contrast review. Automated scans alone do not establish conformance.
 
 ## U-10 — Choose menu language independently · V1
 

@@ -1,10 +1,10 @@
 # Product requirements — Afaan Oromo Bible
 
-Status: adopted planning baseline, 2026-10-19. This specifies the intended first public release; it does not claim that features, rights, or platform support have already been verified. [MVP_SCOPE.md](MVP_SCOPE.md) owns release acceptance; [ROADMAP.md](ROADMAP.md) owns delivery order.
+Status: adopted planning baseline, 2026-10-19; Linux added to the V1 target scope by user instruction on 2026-10-20. This specifies the intended first public release; it does not claim that features, rights, or platform support have already been verified. [MVP_SCOPE.md](MVP_SCOPE.md) owns release acceptance; [ROADMAP.md](ROADMAP.md) owns delivery order.
 
 ## Product goal
 
-Provide a beautiful, dependable Afaan Oromo Scripture reader for Windows and macOS that works without internet, an account, a subscription, or AI. A person should be able to find a passage during a church service, read it comfortably, record a thought, and recover that note later.
+Provide a beautiful, dependable Afaan Oromo Scripture reader for Windows, macOS, and Linux that works without internet, an account, a subscription, or AI. A person should be able to find a passage during a church service, read it comfortably, record a thought, and recover that note later.
 
 V1 ships one established, authorized Afaan Oromo edition. The exact edition, intended readers, canon and variety remain **verification required**. The product must identify that edition honestly and must not present a particular variety as universally accepted. Do not claim to be the first or only Oromo desktop Bible without evidence.
 
@@ -34,34 +34,36 @@ V1 supports preparation through reliable reading and notes. It does not include 
 
 ## Adopted scope decisions
 
-| Area          | Decision                                                                                                                          | Reason                                                                                |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Platforms     | Windows and macOS desktop                                                                                                         | Stated product target; exact supported OS/architecture matrix is verified before beta |
-| Development   | React + TypeScript + Vite+, Varlock, Tailwind CSS; Tauri 2 integrated in Phase 1                                                  | Fast browser feedback with early native-risk discovery                                |
-| Reading       | One bundled edition, chapter-based loading and rendering                                                                          | Complete offline reader without premature content management                          |
-| Storage       | Immutable Scripture SQLite and separate mutable user SQLite on desktop; fixture JSON and IndexedDB for browser development        | Protect content integrity and keep private records independent of content packages    |
-| Native access | Narrow Rust commands using bundled `rusqlite` and FTS5                                                                            | Read-only content access and atomic user transactions without a general SQL bridge    |
-| Notes         | Plain text, standalone or linked to edition-aware verse anchors                                                                   | Durable useful notes without a complex editor schema                                  |
-| Backup        | Versioned portable JSON of user records; validated atomic replacement with explicit restore confirmation and pre-restore snapshot | Predictable recovery; no merge semantics in V1                                        |
-| Languages     | Interface locale and edition are separate settings                                                                                | Future editions should not require changing menu language                             |
-| Network       | No remote backend required for V1                                                                                                 | Offline independence and reduced operational burden                                   |
-| Compatibility | No backward-compatibility obligations before public V1.0                                                                          | Refactor directly, remove obsolete code and reset development data as needed          |
+| Area          | Decision                                                                                                                          | Reason                                                                                   |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Platforms     | Windows, macOS, and Linux desktop                                                                                                 | User-approved V1 targets; exact supported OS/architecture matrix is verified before beta |
+| Development   | React + TypeScript + Vite+, Varlock, Tailwind CSS; Tauri 2 integrated in Phase 1                                                  | Fast browser feedback with early native-risk discovery                                   |
+| Reading       | One bundled edition, chapter-based loading and rendering                                                                          | Complete offline reader without premature content management                             |
+| Storage       | Immutable Scripture SQLite and separate mutable user SQLite on desktop; fixture JSON and IndexedDB for browser development        | Protect content integrity and keep private records independent of content packages       |
+| Native access | Narrow Rust commands using bundled `rusqlite` and FTS5                                                                            | Read-only content access and atomic user transactions without a general SQL bridge       |
+| Notes         | Plain text, standalone or linked to edition-aware verse anchors                                                                   | Durable useful notes without a complex editor schema                                     |
+| Backup        | Versioned portable JSON of user records; validated atomic replacement with explicit restore confirmation and pre-restore snapshot | Predictable recovery; no merge semantics in V1                                           |
+| Languages     | Interface locale and edition are separate settings                                                                                | Future editions should not require changing menu language                                |
+| Network       | No remote backend required for V1                                                                                                 | Offline independence and reduced operational burden                                      |
+| Compatibility | No backward-compatibility obligations before public V1.0                                                                          | Refactor directly, remove obsolete code and reset development data as needed             |
+
+The proposed initial Linux qualification target is **Ubuntu 24.04 LTS, x86_64, GNOME**, with `.deb` as the primary package. Support floors remain proposed until target testing passes; other Linux distributions and Linux ARM are not promised. Linux is a required V1 release target, not solely a development host. Packaging and authenticity/integrity requirements are owned by [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md).
 
 These decisions supersede recommendations in the original brief where they differ, including its generic Vite recommendation, SQL-plugin option and richer note model. User instructions select Vite+ and Varlock. Details and dependency verification belong to [TECH_STACK.md](TECH_STACK.md).
 
 ## Required V1 outcomes
 
-| Requirement                     | Outcome                                                                                                                                               |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P-01: reliable offline reading  | An installed app can open every included chapter without network access and displays the approved edition's supplied content faithfully.              |
-| P-02: efficient navigation      | A user can choose a book/chapter, move to an adjacent chapter, and resolve a supported reference without losing their place to a misleading fallback. |
-| P-03: useful search             | Supported words, phrases and book filters work with Oromo-aware normalization and stable result references.                                           |
-| P-04: passage actions           | A user can select whole verses, copy with reference/edition notice, bookmark, highlight and add a linked note.                                        |
-| P-05: personal records          | Standalone and linked notes, annotations, preferences and reading position survive an acknowledged save and relaunch.                                 |
-| P-06: recovery                  | A portable backup can restore personal records on a clean installation; invalid backups leave existing records untouched.                             |
-| P-07: readable accessible UI    | Light/dark/system themes, reading controls, keyboard access and screen-reader workflows meet the agreed acceptance checks.                            |
-| P-08: transparent content       | Edition, source, copyright, license/permission notice and included-book information are visible offline.                                              |
-| P-09: distributable application | Windows/macOS installers and signing/notarization are validated on the final support matrix before public release.                                    |
+| Requirement                     | Outcome                                                                                                                                                            |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P-01: reliable offline reading  | An installed app can open every included chapter without network access and displays the approved edition's supplied content faithfully.                           |
+| P-02: efficient navigation      | A user can choose a book/chapter, move to an adjacent chapter, and resolve a supported reference without losing their place to a misleading fallback.              |
+| P-03: useful search             | Supported words, phrases and book filters work with Oromo-aware normalization and stable result references.                                                        |
+| P-04: passage actions           | A user can select whole verses, copy with reference/edition notice, bookmark, highlight and add a linked note.                                                     |
+| P-05: personal records          | Standalone and linked notes, annotations, preferences and reading position survive an acknowledged save and relaunch.                                              |
+| P-06: recovery                  | A portable backup can restore personal records on a clean installation; invalid backups leave existing records untouched.                                          |
+| P-07: readable accessible UI    | Light/dark/system themes, reading controls, keyboard access and screen-reader workflows meet the agreed acceptance checks.                                         |
+| P-08: transparent content       | Edition, source, copyright, license/permission notice and included-book information are visible offline.                                                           |
+| P-09: distributable application | Windows/macOS/Linux packages, installation and platform-appropriate authenticity/integrity checks are validated on the final support matrix before public release. |
 
 Detailed behavior belongs to [FEATURE_SPECIFICATIONS.md](FEATURE_SPECIFICATIONS.md), scenarios to [USER_STORIES.md](USER_STORIES.md), and the release checklist to [MVP_SCOPE.md](MVP_SCOPE.md).
 
@@ -78,7 +80,7 @@ The following are **proposed acceptance targets**, not measured results or platf
 | Content integrity        | Zero unexplained lost/changed source text or unresolved structural records | Pipeline reports against exact source revision; all reviewed exceptions explicit                                                                                    |
 | Reliability              | Zero known release-blocking data loss or corruption cases                  | Crash/restart, disk-write failure, corrupt-backup and restore tests                                                                                                 |
 
-Benchmark on a recorded Windows 11 x64 machine with at least 8 GB RAM and SSD and an Apple M1 Mac with 8 GB RAM and SSD; record exact hardware, OS, WebView, app version and corpus hash. These machines are benchmark references; the support floor is a separate release decision. Report distributions, not a single best run. No target permits losing fidelity, accessibility or an honest save indicator.
+Benchmark on a recorded Windows 11 x64 machine with at least 8 GB RAM and SSD, an Apple M1 Mac with 8 GB RAM and SSD, and an Ubuntu 24.04 LTS x86_64 GNOME machine with at least 8 GB RAM and SSD; record exact hardware, OS, WebView, app version and corpus hash. These machines are proposed benchmark references; support floors remain subject to target qualification. Report distributions, not a single best run. No target permits losing fidelity, accessibility or an honest save indicator. Existing Linux headless SQLite results do not establish WebKitGTK application performance or native launch readiness.
 
 ## Success evaluation
 
@@ -88,7 +90,7 @@ Do not add behavioral telemetry by default. Use consented observations, local be
 
 ## Explicit exclusions
 
-V1 excludes multiple bundled translations, parallel reading, rich-text editing, sermon templates/organization, commentary packages, audio, cloud accounts, synchronization, AI, mobile applications and automatic content downloads. A simple, signed manual application-update path is sufficient; a self-updater is optional and must not delay the reader. See [ROADMAP.md](ROADMAP.md) for later sequencing.
+V1 excludes multiple bundled translations, parallel reading, rich-text editing, sermon templates/organization, commentary packages, audio, cloud accounts, synchronization, AI, mobile applications and automatic content downloads. A simple manual application-update path with the platform-appropriate authenticity/integrity checks is sufficient; a self-updater is optional and must not delay the reader. See [ROADMAP.md](ROADMAP.md) for later sequencing.
 
 ## Decisions requiring verification
 

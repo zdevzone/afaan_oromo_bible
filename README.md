@@ -1,6 +1,6 @@
 # Afaan Oromo Bible
 
-An offline-first React/TypeScript and Tauri 2 application for Windows and macOS. Start with the [documentation index](docs/README.md); the [roadmap ends with the concrete Phase 1 implementation plan](docs/ROADMAP.md#phase-1-implementation-plan).
+An offline-first React/TypeScript and Tauri 2 application for Windows, macOS and Linux. Start with the [documentation index](docs/README.md); the [roadmap ends with the concrete Phase 1 implementation plan](docs/ROADMAP.md#phase-1-implementation-plan).
 
 Project repository: [zdevzone/afaan_oromo_bible](https://github.com/zdevzone/afaan_oromo_bible).
 
@@ -27,11 +27,13 @@ Verification recorded on Linux, 2026-10-20:
 
 The browser checks cover reference/bridge navigation, phrase search, saved linked notes, reload, passage reopening and durable deletion. Light/dark and narrow layouts were inspected; automated checks found no page errors or horizontal document overflow. These checks do not constitute a full accessibility audit.
 
-**Phase 1 remains open for native Windows/macOS validation.** This Linux host lacks GTK3/WebKit2GTK 4.1 development prerequisites, and Windows/macOS hosts are not available here. No Tauri window launch, target-platform restart/clipboard check, installer, signing or notarization has passed. Desktop close handling for an unsaved draft also needs implementation and native verification.
+**Phase 1 remains open for native Windows, macOS and Linux validation.** This Linux host is Debian 13 and lacks GTK3/WebKitGTK 4.1 development prerequisites, and Windows/macOS hosts are not available here. No Tauri window launch, target-platform restart/clipboard check, installer, signing or notarization has passed. Desktop close handling for an unsaved draft also needs implementation and native verification.
+
+Linux is included in V1 scope. The proposed first qualification target is **Ubuntu 24.04 LTS x86_64 with GNOME**, using a `.deb` package. This is a target to test, not a claim of working support today. Other distributions, desktop environments and ARM devices need separate qualification; an AppImage is optional later packaging work. The same React/Tauri application and SQLite adapters serve all three operating systems. See the [release matrix](docs/RELEASE_STRATEGY.md) for the owning platform and distribution decisions.
 
 ## Development
 
-Check `vp --version` before installing the global CLI. Use the [official Vite+ installation instructions](https://viteplus.dev/guide/). Keep the project-local version and matching core override; do not substitute plain Vite. The committed JavaScript and Cargo graphs have been installed/resolved on this Linux host; clean Windows/macOS installs remain part of native validation.
+Check `vp --version` before installing the global CLI. Use the [official Vite+ installation instructions](https://viteplus.dev/guide/). Keep the project-local version and matching core override; do not substitute plain Vite. The committed JavaScript and Cargo graphs have been installed/resolved on this Linux host; clean installations on the supported Windows, macOS and Linux matrix remain part of native validation.
 
 After Vite+ is available:
 
@@ -67,7 +69,17 @@ By default Playwright starts `vp dev`. To test the built browser fixture app, ru
 
 ## Native development
 
-Install the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) on each host. Rust 1.90.0 is pinned and has compiled the headless SQLite repository tests. The desktop feature and platform dependencies still require target-host verification. Linux compilation does not validate Windows/macOS installers or WebViews.
+Install the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) on each host. Rust 1.90.0 is pinned and has compiled the headless SQLite repository tests. The desktop feature and platform dependencies still require target-host verification. Each operating system needs its own native acceptance evidence.
+
+Linux development requires GTK3 and WebKitGTK 4.1 plus the distribution's build dependencies. For Debian/Ubuntu, the official setup is:
+
+```sh
+sudo apt update
+sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
+  libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+```
+
+These are host setup commands; they have not been run in this managed workspace. A desktop session is also required to exercise a native window. End users install the packaged application and its declared system runtime dependencies; they do not need Rust, Node or Vite+. A `.deb` may fetch missing dependencies during installation, so offline reading and completely disconnected installation are separate acceptance checks.
 
 ```sh
 vp run desktop:dev
@@ -77,6 +89,8 @@ The wrapper sets the Varlock-managed public renderer target to `tauri` before Ta
 
 Original development PNG/ICO assets satisfy Tauri's icon-file requirements even while bundling is disabled. They are placeholders; final production artwork and packaging remain release work.
 
+Tauri automatically merges `src-tauri/tauri.linux.conf.json` on Linux. It selects the planned `.deb` format; the shared configuration still disables bundling during internal development. No second application, new JavaScript dependency, or Linux-specific persistence layer is introduced. Build Linux release artifacts on the oldest qualified distribution; this Debian 13 workspace does not establish Ubuntu 24.04 binary compatibility. See [Tauri's Debian packaging guidance](https://v2.tauri.app/distribute/debian/).
+
 SQLite repository tests run without the GTK desktop feature:
 
 ```sh
@@ -84,7 +98,7 @@ cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --features
 cargo fmt --manifest-path src-tauri/Cargo.toml --check
 ```
 
-`vp run desktop:check` is an internal native compilation using test content without packaging. `vp run public:build` deliberately fails until the authorized-content pipeline and release gates exist. Do not weaken this gate to make a test build appear publicly releasable. Required Windows/macOS native checks, accessibility review, signing and real-content validation remain open.
+`vp run desktop:check` is an internal native compilation using test content without packaging. `vp run public:build` deliberately fails until the authorized-content pipeline and release gates exist. Do not weaken this gate to make a test build appear publicly releasable. Required Windows/macOS/Linux native checks, accessibility review, platform-appropriate artifact verification and real-content validation remain open.
 
 ## Working rules
 
@@ -94,7 +108,7 @@ Shadcnblocks Pro is the primary UI resource. The public catalog and underlying R
 
 Next, in order:
 
-1. On Windows and macOS, install the platform prerequisites and run `vp run desktop:dev`; resolve native compilation/IPC issues and prove read → search → linked note → restart plus clipboard behavior.
+1. Prepare native Windows, macOS and Linux hosts, install their platform prerequisites and run `vp run desktop:dev`; resolve native compilation/IPC issues and prove read → search → linked note → restart plus clipboard behavior. Qualify the proposed Ubuntu/GNOME target in Wayland and X11 sessions.
 2. Implement and verify the native unsaved-note close guard, including save failure, discard and cancel. Keep Phase 1 open until the native loop is demonstrated.
 3. Confirm the initial Afaan Oromo edition, authorized structured source, redistribution permissions and attribution. Provide the purchased Shadcnblocks source through an appropriate private resource and review its exact terms.
 4. Proceed to Phase 2's full-corpus pipeline and remaining required V1 features in the [roadmap](docs/ROADMAP.md). AI and synchronization remain later work.

@@ -2,15 +2,17 @@
 
 Status: adopted milestone plan, 2026-10-19; execution checkpoint updated 2026-10-20. The documentation baseline is established and authorized Phase 1 development is underway. Phase numbers indicate sequence, not calendar estimates. Each phase ends with reviewable evidence; installed tools, a renderer build or headless SQLite tests do not establish native or release readiness.
 
+Windows, macOS, and Linux are required V1 targets. The proposed initial Linux qualification is Ubuntu 24.04 LTS x86_64 with GNOME, with `.deb` as the primary package; other distributions and Linux ARM are not yet promised. Support floors remain proposed pending target tests. Packaging requirements and the final qualification matrix are owned by [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md).
+
 ## Delivery sequence
 
-| Phase                           | Outcome                                                                                       | Main dependency                                          | Exit evidence                                                                                                            |
-| ------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| 0 — Foundation and decisions    | Coherent documents, toolchain inventory, repository boundary and rights/component registers   | User brief and actual environment                        | Required docs agree; chosen tools verified or blockers recorded; no real Scripture/paid source assumed                   |
-| 1 — Vertical slice              | One React read → navigate → search → note → restart loop, browser and early Tauri integration | Phase 0 architecture; synthetic fixtures allowed         | Browser loop and real Tauri SQLite/restart loop pass; Windows/macOS target evidence recorded; remaining checks stay open |
-| 2 — Complete reader and content | Authorized full corpus, required reading/annotation/settings features and portable recovery   | Edition/audience/rights approval                         | Full required feature scenarios pass; corpus integrity reports and backup round-trip available                           |
-| 3 — Reliability and beta        | Accessible, durable, fast application validated with intended readers                         | Phase 2 complete; target hardware and reviewers          | Failure tests, fluent review, benchmarks and platform beta checks pass; no release-blocking defects                      |
-| 4 — V1.0 release                | First signed public production installers                                                     | All V1 gates, rights, signing and support matrix cleared | Reproducible artifacts, verified notices/installation, versioned user schema and recovery instructions                   |
+| Phase                           | Outcome                                                                                       | Main dependency                                                    | Exit evidence                                                                                           |
+| ------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| 0 — Foundation and decisions    | Coherent documents, toolchain inventory, repository boundary and rights/component registers   | User brief and actual environment                                  | Required docs agree; chosen tools verified or blockers recorded; no real Scripture/paid source assumed  |
+| 1 — Vertical slice              | One React read → navigate → search → note → restart loop, browser and early Tauri integration | Phase 0 architecture; synthetic fixtures allowed                   | Browser loop and real Tauri SQLite/restart loop pass on Windows/macOS/Linux; remaining checks stay open |
+| 2 — Complete reader and content | Authorized full corpus, required reading/annotation/settings features and portable recovery   | Edition/audience/rights approval                                   | Full required feature scenarios pass; corpus integrity reports and backup round-trip available          |
+| 3 — Reliability and beta        | Accessible, durable, fast application validated with intended readers                         | Phase 2 complete; target hardware and reviewers                    | Failure tests, fluent review, benchmarks and platform beta checks pass; no release-blocking defects     |
+| 4 — V1.0 release                | First verified public production packages for Windows/macOS/Linux                             | All V1 gates, rights, signing/integrity and support matrix cleared | Reproducible artifacts, verified notices/installation, versioned user schema and recovery instructions  |
 
 The critical path is not purely code: content permission/audience review, licensed component access, fluent Oromo review and target-platform signing/validation must progress alongside engineering. An unresolved external dependency does not justify implementing unrelated future features.
 
@@ -33,13 +35,13 @@ The final section is the exact ordered handoff. Phase 1 does **not** require a l
 
 ### Current checkpoint — 2026-10-20
 
-| Evidence                      | Current result                                                                                                                                                                                                                                                                              |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend foundation           | Dependencies installed; type checking, Vite+ checks, browser renderer build and Tauri renderer build pass. Varlock rejects an invalid target. A Tauri renderer build produces web assets; it does not compile or launch the desktop application.                                            |
-| Behavior and repository tests | 48 Vitest tests and 12 headless Rust SQLite tests pass. Rust formatting and headless Clippy checks pass. The Rust tests use `--no-default-features --features development-content`, so they do not exercise the WebView, Tauri command dispatch, clipboard plugin or desktop configuration. |
-| Browser journey evidence      | Both browser journeys pass against the production preview across five repeated runs each: 10/10 passing executions. See [repository status](../README.md) for the latest command outcomes.                                                                                                  |
-| Native application evidence   | The narrow Rust/TypeScript adapters exist, but the application has not completed a real Windows/macOS launch and restart loop. This Linux host still lacks GTK/WebKit desktop prerequisites. Native close handling for unsaved or failed-save drafts remains to implement and verify.       |
-| Content and design inputs     | The fixture is explicitly synthetic. Exact edition permissions, approved content import, fluent Oromo review and purchased Shadcnblocks source access remain open.                                                                                                                          |
+| Evidence                      | Current result                                                                                                                                                                                                                                                                                                   |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend foundation           | Dependencies installed; type checking, Vite+ checks, browser renderer build and Tauri renderer build pass. Varlock rejects an invalid target. A Tauri renderer build produces web assets; it does not compile or launch the desktop application.                                                                 |
+| Behavior and repository tests | 48 Vitest tests and 12 headless Rust SQLite tests pass. Rust formatting and headless Clippy checks pass. The Rust tests use `--no-default-features --features development-content`, so they do not exercise the WebView, Tauri command dispatch, clipboard plugin or desktop configuration.                      |
+| Browser journey evidence      | Both browser journeys pass against the production preview across five repeated runs each: 10/10 passing executions. See [repository status](../README.md) for the latest command outcomes.                                                                                                                       |
+| Native application evidence   | The narrow Rust/TypeScript adapters exist, but the application has not completed a real Windows/macOS/Linux launch and restart loop. At this recorded checkpoint the Linux host lacks GTK/WebKit desktop prerequisites. Native close handling for unsaved or failed-save drafts remains to implement and verify. |
+| Content and design inputs     | The fixture is explicitly synthetic. Exact edition permissions, approved content import, fluent Oromo review and purchased Shadcnblocks source access remain open.                                                                                                                                               |
 
 Phase 1 remains open. Complete its browser/native evidence and close/save behavior before expanding into Phase 2 reader features. Content permission and licensed-source acquisition may proceed independently while native hosts are prepared.
 
@@ -55,16 +57,16 @@ Phase 1 remains open. Complete its browser/native evidence and close/save behavi
 | 2.6   | Implement portable user-data export, validation and transactional replacement restore            | Clean-install round-trip and failure-injection tests; explicit confirmation plus pre-restore snapshot                            |
 | 2.7   | Add offline content/About/notice screens and production content-build gating                     | Exact attribution available offline; fixtures/browser adapters absent from native release artifacts                              |
 
-Exit: all required V1 feature rows are implemented, full corpus content reports pass, and data recovery works on both target platforms. Browser tests still support fast iteration but do not replace native acceptance.
+Exit: all required V1 feature rows are implemented, full corpus content reports pass, and data recovery works on all three target platforms. Browser tests still support fast iteration but do not replace native acceptance.
 
 ## Phase 3 — Reliability and beta
 
 1. Run content-integrity, Unicode/reference, adapter contract and user-data failure tests from [TESTING_STRATEGY.md](TESTING_STRATEGY.md). Exercise crash/restart, concurrent typing/navigation, full/unwritable storage, invalid backups and interrupted restore.
-2. Verify the final OS/architecture support matrix, minimum runtime assumptions and Windows WebView2 installation strategy. Record first-install internet requirements separately from offline use.
-3. Perform keyboard, screen-reader, contrast, zoom and narrow-window checks; review Afaan Oromo catalogs, aliases and search cases with fluent readers.
+2. Verify the final OS/architecture support matrix, minimum runtime assumptions, Windows WebView2 installation strategy, and qualified Linux WebKitGTK/runtime dependencies. Record first-install internet requirements separately from offline use; follow [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md) for package qualification.
+3. Perform keyboard, screen-reader, contrast, zoom and narrow-window checks on Windows, macOS, and the qualified Linux GNOME target; review Afaan Oromo catalogs, aliases and search cases with fluent readers.
 4. Benchmark a production build against the authorized full corpus using the hardware and methods in [PRD.md](PRD.md). Record percentiles and corpus/tool versions; address slow or unbounded operations.
 5. Conduct formative tests with intended readers using [USER_STORIES.md](USER_STORIES.md). Observe passage navigation during a service-like task and the full note/recovery loop. Prioritize correctness, confusing language and lost focus before cosmetic extras.
-6. Test signed beta installer candidates and recovery on clean Windows/macOS machines. Explain that pre-V1 beta data may be reset; do not promise compatibility or introduce development migrations.
+6. Test beta packages, platform-appropriate authenticity/integrity and recovery on clean Windows/macOS/Linux machines. Linux qualification is a required beta/release gate. Explain that pre-V1 beta data may be reset; do not promise compatibility or introduce development migrations.
 
 Exit: no known release-blocking data loss, content corruption, required-flow, accessibility or install failures; fluent content/UI review complete; benchmarks evaluated; beta limitations and recovery instructions documented. Optional features cannot substitute for unresolved blockers.
 
@@ -72,9 +74,9 @@ Exit: no known release-blocking data loss, content corruption, required-flow, ac
 
 1. Complete every gate in [MVP_SCOPE.md](MVP_SCOPE.md) and [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md), including content permissions and paid-source publication policy.
 2. Freeze and identify the first supported user-data schema and backup schema. Commit representative compatibility fixtures for future public-version migration tests. This is the start of compatibility obligations, not a reason to retain pre-release implementations.
-3. Build pinned reproducible release candidates, sign Windows artifacts, sign/notarize macOS artifacts, and validate the final downloaded installers and published hashes.
+3. Build pinned reproducible release candidates for all three targets, apply the signing/notarization and Linux package authenticity/integrity requirements in [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md), and validate final downloaded packages and published hashes.
 4. Confirm offline operation and clean install/reinstall behavior from the final artifacts. Publish accurate prerequisites, known limitations, notices, backup/restore instructions and release notes.
-5. Distribute through the selected release channel only after final review. A signed manual installation path suffices; automatic updates are optional.
+5. Distribute through the selected release channel only after final review. A manual installation path with platform-appropriate authenticity/integrity checks suffices; automatic updates are optional.
 
 Exit: V1.0 is publicly available with an authorized edition and tested recovery path. Subsequent public schema changes preserve user data through explicit tested migrations.
 
@@ -105,7 +107,7 @@ This is the ordered implementation and verification sequence. The foundation fil
 
 ### 1. Verify and pin the toolchain
 
-Inspect the global `vp` executable first; install Vite+ if absent using the verified official instructions, as already authorized. Record `vp`, Node, package manager, `rustc`, `cargo` and rustup/toolchain versions plus missing OS prerequisites. Pin a supported Node 24 LTS patch, pnpm 10 patch selected through Vite+, project-local `vite-plus`, and compatible dependencies in the lockfile. Any Rust installation/prerequisite step is explicit and its result recorded; do not claim Windows/macOS verification from a Linux shell.
+Inspect the global `vp` executable first; install Vite+ if absent using the verified official instructions, as already authorized. Record `vp`, Node, package manager, `rustc`, `cargo` and rustup/toolchain versions plus missing OS prerequisites. Pin a supported Node 24 LTS patch, pnpm 10 patch selected through Vite+, project-local `vite-plus`, and compatible dependencies in the lockfile. Any Rust installation/prerequisite step is explicit and its result recorded; do not claim Windows/macOS verification from a Linux shell or Linux native readiness from headless tests.
 
 Create: `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` (matching Vite+ aliases/overrides), `.node-version`, `rust-toolchain.toml`, `.gitignore`, `README.md` and root `AGENTS.md` pointing to `docs/AGENTS.md`.
 
@@ -161,22 +163,22 @@ Exit check: complete read → navigate → search → linked note → saved → 
 
 ### 6. Integrate Tauri and SQLite immediately
 
-Create `src-tauri/Cargo.toml`, generated `Cargo.lock`, `build.rs`, `tauri.conf.json`, required RGBA `icons/icon.png` and Windows `icons/icon.ico`, `capabilities/default.json`, `src-tauri/src/main.rs`, `lib.rs`, `storage.rs`, and `src/adapters/tauri/library.ts`, `userStore.ts`. Development icons do not establish the final production identity. Extend the sole composition root with explicit native selection through the supported Tauri API; it must not fall back to browser storage on failure.
+Create `src-tauri/Cargo.toml`, generated `Cargo.lock`, `build.rs`, `tauri.conf.json`, the automatically merged `tauri.linux.conf.json` `.deb` override, required RGBA `icons/icon.png` and Windows `icons/icon.ico`, `capabilities/default.json`, `src-tauri/src/main.rs`, `lib.rs`, `storage.rs`, and `src/adapters/tauri/library.ts`, `userStore.ts`. Development icons do not establish the final production identity. Extend the sole composition root with explicit native selection through the supported Tauri API; it must not fall back to browser storage on failure.
 
 Register only narrow operations used by the loop: list books, get chapter, resolve/search through the agreed query contract, list/save/delete notes and get/save reading position. Rust owns app-local paths, validates inputs, opens fixture content read-only and commits user writes transactionally. Seed/build a local synthetic development SQLite pack through a controlled development-only path; no runtime USFM downloader. Verify FTS5 on the bundled SQLite build and parameterize parsed queries. Keep user records separate from content and bind no shell/arbitrary-file/generic-SQL capabilities.
 
-Exit check: `vp run desktop:dev` starts where native prerequisites are available; its wrapper selects the Tauri renderer target and explicitly enables development content. The same React loop saves to SQLite and survives native restart. Verify a content write fails, user writes commit, malformed IPC inputs fail safely, and a native initialization failure never opens IndexedDB. Run Windows/macOS target tests before marking the native proof complete. If only another host is available, record that evidence and leave target checks pending.
+Exit check: `vp run desktop:dev` starts where native prerequisites are available; its wrapper selects the Tauri renderer target and explicitly enables development content. The same React loop saves to SQLite and survives native restart. Verify a content write fails, user writes commit, malformed IPC inputs fail safely, and a native initialization failure never opens IndexedDB. Run actual Windows/macOS/Linux Tauri target tests before marking the native proof complete. Record each host's evidence separately and leave unavailable target checks pending.
 
 ### 7. Verify and hand off the slice
 
 Run `vp check`, `vp test` for introduced meaningful behavior, `vp build`, the browser loop, appropriate Rust checks and available Tauri smoke checks. Use shared fixtures/contract cases for adapter parity; do not add low-value snapshot tests for every styled component. Add tests under `tests/contracts/` and `tests/e2e/` only when exercising real cross-module behavior. An internal browser or native development build may use fixtures; every public production build must reject unapproved synthetic content. Native development explicitly enables the `development-content` Cargo feature; production builds omit it and run the content-clearance gate.
 
-Record exact commands, outcomes, tool versions, missing platform dependencies, UI-source access gaps and pending Windows/macOS evidence in the repository status. The Phase 1 exit is a demonstrable browser loop plus an actual native SQLite integration, with no claim that a test on an unavailable target passed.
+Record exact commands, outcomes, tool versions, missing platform dependencies, UI-source access gaps and pending Windows/macOS/Linux evidence in the repository status. The Phase 1 exit is a demonstrable browser loop plus actual native SQLite integration on each required target, with no claim that a test on an unavailable target passed.
 
 Finish the remaining Phase 1 work in this order:
 
-1. Prepare a desktop-capable host, run the complete Tauri build and `vp run desktop:dev`, and resolve actual desktop configuration, assets, IPC, clipboard and SQLite initialization failures. Installing Linux GTK/WebKit enables a local smoke test; it does not satisfy the Windows/macOS target checks.
+1. Prepare desktop-capable hosts, run the complete Tauri build and `vp run desktop:dev`, and resolve actual desktop configuration, assets, IPC, clipboard and SQLite initialization failures. Qualify Ubuntu 24.04 LTS x86_64 GNOME first for Linux. Installing GTK/WebKit or passing headless Rust tests alone does not satisfy the Linux native reader gate; demonstrate a real WebKitGTK window and restart loop. Linux evidence does not satisfy the separate Windows/macOS checks.
 2. Implement the native window-close Save/Discard/Cancel path using the verified Tauri API. Failed saves and Cancel must leave the window and draft available; test deliberate discard and successful save/close separately.
-3. Demonstrate read → navigate → search → linked note → saved → native close/restart → reopen on Windows and macOS. Record the adapter/FTS5/read-only/error checks and any unresolved target issues before closing Phase 1.
+3. Demonstrate read → navigate → search → linked note → saved → native close/restart → reopen on Windows, macOS, and Linux. Record the adapter/FTS5/read-only/error checks and any unresolved target issues before closing Phase 1; real native launch on all three remains pending until demonstrated.
 
 After those gates pass, begin Phase 2 authorized-content import and reader completeness. Continue rights/source acquisition in parallel; do not switch to AI, cloud sync or sermon tools.
