@@ -67,6 +67,7 @@ Status: Phase 1 scaffold established as one application. The tree shows the curr
 ├── tools/
 │   ├── native.mjs             # Cross-platform target/feature selection for Tauri
 │   ├── check-release.mjs      # Reject public packaging until real content gates exist
+│   ├── linux/                 # Ubuntu dev image and real AT-SPI/X11 native smoke runner
 │   └── scripture/
 │       └── README.md          # Fixture checks and future parser/import handoff
 ├── src-tauri/

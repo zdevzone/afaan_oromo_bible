@@ -1,6 +1,6 @@
 # Release strategy
 
-Status: approved release process for Windows, macOS and Linux; edition distribution rights, signing accounts/keys, supported OS floors and architecture artifacts require verification. The first public production release is **V1.0**, regardless of the number or labels of development iterations. Linux is a required V1 target, with its initial qualification proposal below; native evidence is still pending on all three platforms.
+Status: approved release process for Windows, macOS and Linux; edition distribution rights, signing accounts/keys, supported OS floors and architecture artifacts require verification. The first public production release is **V1.0**, regardless of the number or labels of development iterations. Linux is a required V1 target; its full native development build and bounded offline X11 smoke pass, while the release qualification below and Windows/macOS native evidence remain pending.
 
 ## Release stages
 
@@ -61,7 +61,7 @@ A release owner records a pass, failure or explicit blocker for each item; an un
 8. Final downloaded Windows/macOS installers pass the applicable signing/notarization/hash checks; Linux package checksums and the manifest/package signature verify using the documented public key. WebView2 and Linux runtime dependency handling pass, including a clean disconnected install for any artifact advertised as an offline installer. No release-blocking known issue remains.
 9. Publish clear installation, supported-platform, backup/restore, content attribution, version and known-issue information. User-facing text matches actual behavior.
 
-Keep reports and final artifact hashes with the release record. Missing Linux desktop, session, AT-SPI/Orca or package evidence blocks V1 just as missing Windows/macOS evidence does. Do not claim tests passed if the environment, rights, corpus or signing identity/key were unavailable. The current workspace has headless Rust evidence but no completed full native launch; Linux GTK/WebKit development prerequisites remain missing.
+Keep reports and final artifact hashes with the release record. Missing Linux desktop, session, AT-SPI/Orca or package evidence blocks V1 just as missing Windows/macOS evidence does. Do not claim tests passed if the environment, rights, corpus or signing identity/key were unavailable. The current Ubuntu 24.04 development container has the GTK/WebKit prerequisites and passes a full embedded native debug build plus offline synthetic read/copy/search/note/restart smoke under Xvfb/Openbox. This establishes early native integration, not GNOME X11/Wayland, manual Orca, `.deb` qualification, native unsaved-draft close handling or Windows/macOS readiness. Keyboard/modal focus smoke has no verified passing result yet. See the [Linux guide](../tools/linux/README.md) and [testing evidence](TESTING_STRATEGY.md#browser-versus-native-evidence) for the procedure and its limits.
 
 ## Updates, data and the V1.0 boundary
 

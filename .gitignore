@@ -3,6 +3,7 @@ dist/
 .tooling/
 .pnpm-store/
 src-tauri/target/
+src-tauri/gen/schemas/
 *.tsbuildinfo
 .env
 .env.*
@@ -19,6 +20,8 @@ src-tauri/resources/content/
 *.backup.json
 playwright-report/
 test-results/
+__pycache__/
+*.py[cod]
 .DS_Store
 /afaan-oromo-bible-docs.zip
 /afaan-oromo-bible-phase1.zip
