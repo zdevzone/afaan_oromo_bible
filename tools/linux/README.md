@@ -98,8 +98,31 @@ The runner checks the real native window rather than a browser adapter:
 
 The output directory contains first/restart `report.json` files, accessible trees, requested screenshots, launch/Openbox logs, `sqlite-before-restart.json`, `process-restart.json` and the isolated profile. Inspect report status and errors alongside the process exit code. Screenshot capture problems are recorded separately and do not themselves fail a flow; do not claim screenshots exist without checking the files. Keep disposable profiles/logs under ignored `.tooling`, outside source commits.
 
+## Test the native unsaved-note close guard
+
+After building the embedded application, use the same offline container and desktop-session wrapper with `tools/linux/run-close-smoke.sh` and another new output directory:
+
+```sh
+docker exec aob-linux-desktop \
+  dbus-run-session -- xvfb-run -a -s '-screen 0 1440x1000x24' \
+  bash tools/linux/run-close-smoke.sh \
+    /workspace/.tooling/target-ubuntu24/debug/afaan-oromo-bible \
+    /workspace/.tooling/linux/close-run-001
+```
+
+Here `aob-linux-desktop` must be a running container from this image with the workspace mounted and networking disabled. Alternatively replace `run-smoke.sh` in the earlier `docker run --rm --network none` command with this runner. The same isolated XDG profile rules apply.
+
+The runner creates a synthetic note and uses an external SQLite `BEGIN IMMEDIATE` reservation to provoke a real native store-busy timeout without modifying the database. Openbox translates actual Alt+F4 key events into window-manager close requests. The harness verifies:
+
+1. The close dialog initially focuses Cancel; Escape returns focus and the unchanged draft to the editor.
+2. Discard exits through the native window guard and keeps the previously committed note.
+3. Save and close fails while the database is locked, retains the window and draft, and exposes an error and Cancel.
+4. Releasing the lock and retrying Save commits before native exit. A third process recovers the saved text, then closes cleanly with Alt+F4.
+
+The successful paths do not use SIGTERM. Cleanup uses SIGTERM only after a test failure. Inspect the three stage reports, `close-processes.json`, screenshots and SQLite records; the close test is separate from the earlier committed-write restart smoke. It exercises database contention, not disk-full or crash recovery. Window close also differs from macOS Command-Q, menu Quit and Dock Quit; those application-exit paths need separate implementation and native qualification.
+
 ## Limits and remaining qualification
 
-This is synthetic-content **X11/Openbox under Xvfb** evidence. AT-SPI inspection is useful, but it does not establish manual Orca usability, GNOME accessibility, Wayland clipboard/dialog behavior or real hardware rendering. It does not test native window-close Save/Discard/Cancel, termination during an uncommitted write, full disk, backup/restore, an authorized corpus, `.deb` installation/uninstall, another distribution, Windows or macOS.
+This is synthetic-content **X11/Openbox under Xvfb** evidence. AT-SPI inspection is useful, but it does not establish manual Orca usability, GNOME accessibility, Wayland clipboard/dialog behavior or real hardware rendering. Neither runner tests termination during an uncommitted write, full disk, backup/restore, an authorized corpus, `.deb` installation/uninstall, another distribution, Windows or macOS. The first runner does not exercise the close guard; use the dedicated close runner for that behavior.
 
 Linux V1 qualification still requires the Ubuntu GNOME X11/Wayland, Orca/AT-SPI, package, recovery and dependency checks in [TESTING_STRATEGY.md](../../docs/TESTING_STRATEGY.md) and [RELEASE_STRATEGY.md](../../docs/RELEASE_STRATEGY.md). A successful smoke run contributes evidence to that gate; it does not close it.

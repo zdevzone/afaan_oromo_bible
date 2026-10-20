@@ -3,5 +3,5 @@
   "identifier": "reader-main",
   "description": "Core window access only. No shell, generic filesystem, HTTP, or SQL plugin.",
   "windows": ["main"],
-  "permissions": ["core:default", "clipboard-manager:allow-write-text"]
+  "permissions": ["core:default", "core:window:allow-destroy", "clipboard-manager:allow-write-text"]
 }

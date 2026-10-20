@@ -92,6 +92,285 @@ afterEach(() => {
 });
 
 describe("note editor persistence", () => {
+  it("checks the latest buffer and pauses edits and autosave until close is cancelled", async () => {
+    const saveNote = vi.fn(async (note: Note) => ({ ...note, revision: note.revision + 1 }));
+    const appServices = services(userStore({ saveNote }));
+    const hook = renderHook(() => useNoteWorkspace(appServices));
+    await settle();
+    const beforeRender = hook.result.current;
+    act(() => {
+      beforeRender.create();
+      beforeRender.edit({ bodyText: "   " });
+      expect(beforeRender.hasUnsavedChanges()).toBe(false);
+      beforeRender.edit({ bodyText: "Keep this close-time buffer" });
+      // The native event listener may still hold methods from an earlier render.
+      expect(beforeRender.dirty).toBe(false);
+      expect(beforeRender.hasUnsavedChanges()).toBe(true);
+      beforeRender.pauseForClose();
+      beforeRender.edit({ bodyText: "Blocked after the close request" });
+      beforeRender.create();
+      beforeRender.open(record("Another note"));
+    });
+    await act(async () => {
+      expect(await hook.result.current.remove()).toBe(false);
+      vi.advanceTimersByTime(1000);
+    });
+    expect(hook.result.current.closePaused).toBe(true);
+    expect(hook.result.current.draft?.bodyText).toBe("Keep this close-time buffer");
+    expect(saveNote).not.toHaveBeenCalled();
+
+    act(() => {
+      hook.result.current.resumeAfterClose();
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(saveNote).toHaveBeenCalledTimes(1);
+    expect(hook.result.current.closePaused).toBe(false);
+    expect(hook.result.current.hasUnsavedChanges()).toBe(false);
+    expect(hook.result.current.status).toBe("saved");
+  });
+
+  it("skips queued autosaves during close and waits for an in-flight write before discard", async () => {
+    const storage = controlledStore();
+    const appServices = services(storage.store);
+    const hook = renderHook(() => useNoteWorkspace(appServices));
+    await settle();
+    act(() => {
+      hook.result.current.create();
+      hook.result.current.edit({ bodyText: "Already sent to storage" });
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+    act(() => {
+      hook.result.current.edit({ bodyText: "Discard this queued edit" });
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+    let discarded!: Promise<void>;
+    let closeSave!: Promise<boolean>;
+    let settled = false;
+    act(() => {
+      hook.result.current.pauseForClose();
+      discarded = hook.result.current.discard();
+      closeSave = hook.result.current.save().then((saved) => {
+        settled = true;
+        return saved;
+      });
+    });
+    await settle();
+    expect(settled).toBe(false);
+    expect(storage.saveNote).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      storage.commit(0);
+      await discarded;
+      expect(await closeSave).toBe(true);
+      vi.advanceTimersByTime(1000);
+    });
+    expect(storage.saveNote).toHaveBeenCalledTimes(1);
+    expect(hook.result.current.draft?.bodyText).toBe("Already sent to storage");
+    expect(hook.result.current.hasUnsavedChanges()).toBe(false);
+    expect(hook.result.current.closePaused).toBe(true);
+  });
+
+  it("leaves an already queued autosave uncommitted until the close decision is cancelled", async () => {
+    const storage = controlledStore();
+    const appServices = services(storage.store);
+    const hook = renderHook(() => useNoteWorkspace(appServices));
+    await settle();
+    act(() => {
+      hook.result.current.create();
+      hook.result.current.edit({ bodyText: "Write already started" });
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+    act(() => {
+      hook.result.current.edit({ bodyText: "Wait for my close decision" });
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+    act(() => {
+      hook.result.current.pauseForClose();
+    });
+    await act(async () => {
+      storage.commit(0);
+      vi.advanceTimersByTime(1000);
+    });
+    expect(storage.writes).toHaveLength(1);
+    expect(hook.result.current.draft?.bodyText).toBe("Wait for my close decision");
+    expect(hook.result.current.hasUnsavedChanges()).toBe(true);
+    act(() => {
+      hook.result.current.resumeAfterClose();
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(storage.writes).toHaveLength(2);
+    await act(async () => {
+      storage.commit(1);
+    });
+    expect(hook.result.current.hasUnsavedChanges()).toBe(false);
+  });
+
+  it("drains explicit saves requested before the close pause without accepting new edits", async () => {
+    const storage = controlledStore();
+    const appServices = services(storage.store);
+    const hook = renderHook(() => useNoteWorkspace(appServices));
+    await settle();
+    act(() => {
+      hook.result.current.create();
+      hook.result.current.edit({ bodyText: "First explicit save" });
+    });
+    let first!: Promise<boolean>;
+    let second!: Promise<boolean>;
+    act(() => {
+      first = hook.result.current.save();
+    });
+    await settle();
+    act(() => {
+      hook.result.current.edit({ bodyText: "Latest explicit save" });
+      second = hook.result.current.save();
+      hook.result.current.pauseForClose();
+      hook.result.current.edit({ bodyText: "An edit after close must not enter the queue" });
+    });
+    await act(async () => {
+      storage.commit(0);
+    });
+    expect(storage.writes).toHaveLength(2);
+    expect(storage.writes[1]?.note.bodyText).toBe("Latest explicit save");
+    await act(async () => {
+      storage.commit(1);
+      expect(await first).toBe(true);
+      expect(await second).toBe(true);
+    });
+    expect(hook.result.current.notes[0]?.bodyText).toBe("Latest explicit save");
+    expect(hook.result.current.hasUnsavedChanges()).toBe(false);
+    expect(hook.result.current.closePaused).toBe(true);
+  });
+
+  it("keeps a failed close-time save paused and reports failure until an explicit retry commits", async () => {
+    const storage = controlledStore();
+    const appServices = services(storage.store);
+    const hook = renderHook(() => useNoteWorkspace(appServices));
+    await settle();
+    act(() => {
+      hook.result.current.create();
+      hook.result.current.edit({ bodyText: "Recoverable close-time draft" });
+      hook.result.current.pauseForClose();
+    });
+    let failed!: Promise<boolean>;
+    act(() => {
+      failed = hook.result.current.save();
+    });
+    await settle();
+    await act(async () => {
+      storage.writes[0]!.completion.reject(new Error("Close-time disk failure"));
+      expect(await failed).toBe(false);
+      vi.advanceTimersByTime(1000);
+    });
+    expect(hook.result.current.status).toBe("error");
+    expect(hook.result.current.hasUnsavedChanges()).toBe(true);
+    expect(hook.result.current.closePaused).toBe(true);
+    expect(storage.writes).toHaveLength(1);
+
+    let retried!: Promise<boolean>;
+    act(() => {
+      retried = hook.result.current.save();
+    });
+    await settle();
+    await act(async () => {
+      storage.commit(1);
+      expect(await retried).toBe(true);
+    });
+    expect(hook.result.current.hasUnsavedChanges()).toBe(false);
+    expect(hook.result.current.status).toBe("saved");
+    expect(hook.result.current.closePaused).toBe(true);
+  });
+
+  it("can deliberately discard a failed new draft without carrying its failed save into close", async () => {
+    const saveNote = vi.fn(async () => {
+      throw new Error("Save did not commit");
+    });
+    const appServices = services(userStore({ saveNote }));
+    const hook = renderHook(() => useNoteWorkspace(appServices));
+    await settle();
+    act(() => {
+      hook.result.current.create();
+      hook.result.current.edit({ bodyText: "An explicitly discarded draft" });
+      hook.result.current.pauseForClose();
+    });
+    await act(async () => {
+      expect(await hook.result.current.save()).toBe(false);
+      await hook.result.current.discard();
+      expect(await hook.result.current.save()).toBe(true);
+    });
+    expect(hook.result.current.draft).toBeNull();
+    expect(hook.result.current.hasUnsavedChanges()).toBe(false);
+    expect(hook.result.current.error).toBe("");
+    expect(saveNote).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["browser", "tauri"] as const)(
+    "uses the browser unload warning only for the browser runtime (%s)",
+    async (runtime) => {
+      const appServices: AppServices = { ...services(userStore()), runtime };
+      const hook = renderHook(() => useNoteWorkspace(appServices));
+      await settle();
+      act(() => {
+        hook.result.current.create();
+        hook.result.current.edit({ bodyText: "A draft with platform-specific close handling" });
+      });
+      const event = new Event("beforeunload", { cancelable: true });
+      window.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(runtime === "browser");
+    },
+  );
+
+  it.each([true, false])(
+    "waits for an active delete before acknowledging a clean close (delete succeeds: %s)",
+    async (succeeds) => {
+      const existing = record("A committed note");
+      const deletion = deferred<void>();
+      const deleteNote = vi.fn(() => deletion.promise);
+      const appServices = services(userStore({ listNotes: async () => [existing], deleteNote }));
+      const hook = renderHook(() => useNoteWorkspace(appServices));
+      await settle();
+      let removed!: Promise<boolean>;
+      let closeSave!: Promise<boolean>;
+      let settled = false;
+      act(() => {
+        hook.result.current.open(existing);
+        removed = hook.result.current.remove();
+        hook.result.current.pauseForClose();
+        expect(hook.result.current.hasUnsavedChanges()).toBe(false);
+        closeSave = hook.result.current.save().then((saved) => {
+          settled = true;
+          return saved;
+        });
+      });
+      await settle();
+      expect(deleteNote).toHaveBeenCalledWith(existing.id);
+      expect(settled).toBe(false);
+      await act(async () => {
+        if (succeeds) deletion.resolve();
+        else deletion.reject(new Error("Delete did not commit"));
+        expect(await removed).toBe(succeeds);
+        expect(await closeSave).toBe(succeeds);
+      });
+      if (succeeds) {
+        expect(hook.result.current.draft).toBeNull();
+        expect(hook.result.current.notes).toEqual([]);
+      } else {
+        expect(hook.result.current.draft?.id).toBe(existing.id);
+        expect(hook.result.current.error).toContain("Delete did not commit");
+      }
+    },
+  );
+
   it("serializes rapid edits and waits until the latest buffer is committed", async () => {
     const storage = controlledStore();
     const servicesForTest = services(storage.store);

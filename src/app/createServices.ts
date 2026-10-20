@@ -8,16 +8,18 @@ export async function createServices(): Promise<AppServices> {
     if (!isTauri()) {
       throw new AppError("NATIVE_UNAVAILABLE", "Open this build in the desktop application.");
     }
-    const [{ createTauriLibrary }, { createTauriUserStore }, { writeText }] = await Promise.all([
-      import("../adapters/tauri/library"),
-      import("../adapters/tauri/userStore"),
-      import("@tauri-apps/plugin-clipboard-manager"),
-    ]);
+    const [{ createTauriLibrary }, { createTauriUserStore }, { writeText }, { createTauriWindow }] =
+      await Promise.all([
+        import("../adapters/tauri/library"),
+        import("../adapters/tauri/userStore"),
+        import("@tauri-apps/plugin-clipboard-manager"),
+        import("../adapters/tauri/window"),
+      ]);
     return {
       library: createTauriLibrary(),
       userStore: createTauriUserStore(),
       runtime: "tauri",
-      platform: { copyText: (text) => writeText(text) },
+      platform: { copyText: (text) => writeText(text), window: await createTauriWindow() },
     };
   }
 

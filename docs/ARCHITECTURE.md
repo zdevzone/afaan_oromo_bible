@@ -87,6 +87,11 @@ interface PlatformFiles {
   openBackup(): Promise<OpenResult>;
   copyText(text: string): Promise<void>;
 }
+
+interface DesktopWindow {
+  onCloseRequested(handler: () => void): () => void;
+  close(): Promise<void>; // explicit authorization to destroy the guarded window
+}
 ```
 
 Implement only the operations needed by the current slice. `replaceSnapshot` is an atomic data operation; confirmation and pre-restore recovery belong in the backup workflow. Cancellation is distinct from I/O failure. Do not make success-shaped default data out of an adapter error.
@@ -101,7 +106,7 @@ The Tauri SQL plugin is a valid alternative, but mixing it with a second Rust da
 
 ## Runtime composition and lifecycle
 
-1. `src/app/createServices.ts` establishes the runtime once. Native selection uses the supported Tauri API; production builds must fail clearly if native services cannot initialize.
+1. `src/app/createServices.ts` establishes the runtime once. Native selection uses the supported Tauri API; production builds must fail clearly if native services cannot initialize. Register the native window port before mounting editable UI, so a React effect cleanup cannot leave the editor without close interception.
 2. In browser development, load the test manifest and IndexedDB adapter. Label development content. Production Tauri initialization never silently uses IndexedDB.
 3. Initialize user storage, validate content manifest/version/hash, then resolve the saved edition and reference. If a saved edition is absent, retain its anchors, explain the absence and offer an available edition.
 4. Load one chapter, its annotations and applicable settings. Render structured content with React elements. Do not insert publisher content or notes through unchecked HTML.
@@ -110,6 +115,14 @@ The Tauri SQL plugin is a valid alternative, but mixing it with a second Rust da
 7. On content/database failure, show a recoverable error with retry and backup access where possible. Never erase a store to recover from an unspecified error.
 
 Before V1.0, a developer may explicitly reset disposable development stores when schema changes. This policy does not authorize silent data deletion at runtime. Public V1.0 changes the obligation: user databases require preservation and tested migrations thereafter.
+
+### Native window-close boundary
+
+`src/adapters/tauri/window.ts` installs one persistent close-request listener during service composition. It prevents every window-close request before delegating to the current UI subscriber; removing that subscriber does not remove protection. `src/app/useWindowCloseGuard.ts` coordinates the local Save/Discard/Cancel decision with `useNoteWorkspace.ts`. It pauses edits and queued autosaves synchronously, inspects the latest draft reference, coalesces repeated requests, and invalidates stale completions after unmount or a port change.
+
+Save drains already-started writes and commits the latest buffer using the returned note revision; failure keeps the window and draft available for retry or Cancel. Discard waits for already-started writes and drops only the remaining uncommitted buffer: committed autosaves are retained. Cancel resumes editing/autosave. Pending reading-position/preferences transactions settle before destruction; their status remains separate from note durability. Only a successful decision invokes `DesktopWindow.close()`, implemented with Tauri `destroy()` to avoid re-entering close interception. Scope `core:window:allow-destroy` to the main window. Browser `beforeunload` is a best-effort browser-only warning and is not the native guard.
+
+This covers window-close requests. Actual Alt-F4/window-manager verification now passes in the offline Ubuntu 24.04 Xvfb/Openbox smoke, including Cancel/Escape, Discard, locked-database save failure, retry/commit and clean close. This bounded result does not qualify Windows/macOS, full GNOME X11/Wayland, Orca or packages. macOS Command-Q, application-menu Quit and Dock Quit are separate application-exit paths; the window listener does not establish their protection. Keep native quit-path qualification open. Results and remaining gates are owned by [ROADMAP.md](ROADMAP.md) and [TESTING_STRATEGY.md](TESTING_STRATEGY.md).
 
 ## State, errors and performance
 

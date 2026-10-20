@@ -50,6 +50,7 @@ import { useNoteWorkspace } from "../features/notes/useNoteWorkspace";
 import { NotesPanel, noteTitle } from "../features/notes/NotesPanel";
 import { SearchPanel } from "../features/reader/SearchPanel";
 import { en } from "../locales/en";
+import { useWindowCloseGuard } from "./useWindowCloseGuard";
 
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Something could not be completed. Please try again.";
@@ -86,6 +87,17 @@ export function App({ services }: { services: AppServices }) {
   const searchId = useRef(0);
   const positionQueue = useRef(Promise.resolve());
   const preferenceQueue = useRef(Promise.resolve());
+  const closeGuard = useWindowCloseGuard(services.platform.window, notes, async () => {
+    // Wait for already queued position/preferences transactions. Their failure
+    // notices are separate from note durability; Discard never deletes records.
+    let position: Promise<void>;
+    let preferences: Promise<void>;
+    do {
+      position = positionQueue.current;
+      preferences = preferenceQueue.current;
+      await Promise.allSettled([position, preferences]);
+    } while (position !== positionQueue.current || preferences !== preferenceQueue.current);
+  });
   const referenceRef = useRef<HTMLInputElement>(null);
   const passageRef = useRef<HTMLElement>(null);
   const activeBook = books.find((book) => book.code === chapter?.bookCode);
@@ -545,7 +557,7 @@ export function App({ services }: { services: AppServices }) {
   const next = adjacentChapter(1);
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" inert={closeGuard.active}>
       <a href="#passage" className="skip-link">
         Skip to reading
       </a>
@@ -1067,6 +1079,54 @@ export function App({ services }: { services: AppServices }) {
               }}
             >
               Retry save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={closeGuard.open}
+        onOpenChange={(open) => {
+          if (!open) closeGuard.cancel();
+        }}
+      >
+        <DialogContent
+          showCloseButton={!closeGuard.busy}
+          onEscapeKeyDown={(event) => {
+            if (closeGuard.busy) event.preventDefault();
+          }}
+          onPointerDownOutside={(event) => event.preventDefault()}
+        >
+          <DialogTitle>Save changes before closing?</DialogTitle>
+          <DialogDescription>
+            Save your note on this device, discard changes that have not been saved, or return to
+            reading. An autosave already in progress may have completed; discarding keeps all
+            committed changes.
+          </DialogDescription>
+          {closeGuard.error && (
+            <p role="alert" className="text-error">
+              {closeGuard.error} {notes.error}
+            </p>
+          )}
+          <div className="dialog-actions">
+            <Button variant="outline" disabled={closeGuard.busy} onClick={closeGuard.cancel}>
+              Cancel
+            </Button>
+            <Button
+              variant="ghost"
+              disabled={closeGuard.busy}
+              onClick={() => {
+                void closeGuard.discardAndClose();
+              }}
+            >
+              Discard changes
+            </Button>
+            <Button
+              disabled={closeGuard.busy}
+              onClick={() => {
+                void closeGuard.saveAndClose();
+              }}
+            >
+              {closeGuard.busy ? "Closing…" : "Save and close"}
             </Button>
           </div>
         </DialogContent>

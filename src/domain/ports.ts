@@ -31,5 +31,14 @@ export interface AppServices {
   library: ScriptureLibrary;
   userStore: UserStore;
   runtime: "browser" | "tauri";
-  platform: { copyText(text: string): Promise<void> };
+  platform: {
+    copyText(text: string): Promise<void>;
+    window?: DesktopWindow;
+  };
+}
+
+/** Requests are already prevented by the adapter; only close() authorizes destruction. */
+export interface DesktopWindow {
+  onCloseRequested(handler: () => void): () => void;
+  close(): Promise<void>;
 }

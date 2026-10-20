@@ -102,7 +102,7 @@ Support plain-text notes with optional title, body, creation/update times, and o
 
 Create standalone notes from Notes and linked notes from verse actions. Present notes newest-updated first with stable tie-breaking and readable title/body previews and reference labels. Optional title/body filtering may improve findability after the required save/recovery flow works; do not mix private note text into Scripture search results. Opening a linked note offers a passage navigation action. Allow attaching/changing/removing the anchor through the same validated reference picker.
 
-Notes have visible Save and saved/unsaved/saving/error states. Autosave after 300 ms idle; explicit Save flushes pending changes immediately. Serialize saves per note and use the current revision contract so a late response cannot overwrite a newer edit or label it saved. Navigation away flushes and awaits pending work; if a save fails or the user closes with an unsaved draft, offer Retry/Save, Discard, and Cancel. While a save fails, keep the draft and allow copy recovery. Browser unload limitations require best-effort warning plus explicit save status, never a guarantee. Do not depend on a close callback as the primary save mechanism.
+Notes have visible Save and saved/unsaved/saving/error states. Autosave after 300 ms idle; explicit Save flushes pending changes immediately. Serialize saves per note and use the current revision contract so a late response cannot overwrite a newer edit or label it saved. Navigation away flushes and awaits pending work; if a save fails or the user closes with an unsaved draft, offer Retry/Save, Discard, and Cancel. While a save fails, keep the draft and allow copy recovery. The native close decision is specified in F13; browser-only unload limitations require a best-effort warning plus explicit save status, never a guarantee. Do not depend on a close callback as the primary save mechanism.
 
 A blank new note with no title/body is not saved. Existing content is never deleted simply because a draft is temporarily blank. Deletion names the note/reference and requires confirmation or durable undo. Render stored content as text; escaped HTML-looking input must remain text. Enforce the [data-model limits](DATA_MODEL.md): note titles at most 256 Unicode code points and bodies at most 1 MiB UTF-8, consistently in the editor, IPC, import, and restore. An over-limit draft remains recoverable for shortening/copying, rather than being truncated silently.
 
@@ -187,7 +187,13 @@ Acceptance:
 
 The complete read → navigate → select/copy → search → annotate → settings → backup/restore workflow must work using keyboard and screen readers on Windows, macOS, and qualified Linux environments. Maintain logical landmarks, focus restoration, status announcements, accessible labels, and visible focus. Native menus/dialogs/clipboard use the existing platform-service boundary for all three desktop targets; browser fixtures use transparent development equivalents. Do not suppress OS selection, zoom, or accessibility capabilities to imitate a mobile interface. Ctrl-based reference/search shortcuts apply to Windows and Linux; macOS uses Command equivalents. Verify GNOME/OS shortcut conflicts and retain visible controls for every action.
 
-Desktop window close with unsaved notes offers an appropriate save/discard/cancel path supported by the verified Tauri API. A public build must use the tested platform path; an unverified API assumption is not an implemented requirement. Failures saving on close cannot be reported as successful shutdown saves. Ordinary committed reading requires no startup network permission or sign-in.
+The implemented native window-close guard intercepts requests before editable UI mounts. On a close request, pause editing and automatic note saves before checking the latest buffer. Repeated close requests share one decision. A dirty note presents **Save and close**, **Discard changes**, and **Cancel**:
+
+- Save and close waits for already-started writes, saves the latest buffer with the committed revision, and closes only after success. A failed save keeps the window, draft and retry choices available.
+- Discard changes waits for already-started writes and abandons only uncommitted changes. It does not delete the note or undo earlier committed autosaves.
+- Cancel restores the editor and autosave. A clean editor still waits for pending note mutations and queued position/preferences writes before the guarded window is destroyed.
+
+The main window alone receives the explicit destruction capability; a close failure remains visible and retryable. Browser `beforeunload` is used only for browser development. Actual window-manager verification passes in the offline Ubuntu 24.04 Xvfb/Openbox smoke: Cancel/Escape preserve the draft and restore focus, Discard preserves the committed baseline, a database lock leaves a failed save/window/draft available, retry after unlocking commits before exit, and the next process restores the saved body and closes cleanly. These results do not establish Windows/macOS or full Ubuntu GNOME X11/Wayland/Orca/package qualification. macOS Command-Q, application-menu Quit and Dock Quit use separate application-exit paths and remain an explicit qualification gap. Ordinary committed reading requires no startup network permission or sign-in.
 
 Acceptance:
 
@@ -195,6 +201,7 @@ Acceptance:
 - Light/dark/system, enlarged text, reflow/zoom, reduced motion, and high contrast retain access to all required actions.
 - Permission-denied clipboard/filesystem cases produce visible recovery and do not crash the reader.
 - Linux clipboard, native-dialog cancellation/focus return, system font/display scaling, and high-contrast behavior are exercised on the release matrix without a separate Linux presentation implementation or new UI dependencies.
+- Actual native close tests cover clean close, Save, failed-save retention/retry, Discard, Cancel and repeated requests without losing a draft or rolling back committed autosaves. Test macOS application-level quit paths separately; a passing X11 window-close check cannot qualify them.
 
 ## Optional enhancements and future boundaries
 

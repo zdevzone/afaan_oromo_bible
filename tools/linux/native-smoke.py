@@ -11,10 +11,13 @@ from __future__ import annotations
 
 import argparse
 from collections import deque
+from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import shutil
+import sqlite3
 import subprocess
 import sys
 import time
@@ -24,6 +27,11 @@ from typing import Any, Callable
 NOTE_TITLE = "Linux native smoke fixture"
 NOTE_BODY = "A synthetic native test note persists after the application restarts."
 BRIDGE = "Sample Book A 1:2-3"
+CLOSE_NOTE_TITLE = "Linux close guard fixture"
+CLOSE_BASELINE = "Baseline synthetic note committed before the native close tests."
+CLOSE_DISCARDED = "This synthetic draft must survive Cancel and be removed by Discard."
+CLOSE_SAVED = "This synthetic draft must survive a blocked save, then persist on Save and close."
+CLOSE_DIALOG = "Save changes before closing?"
 CAVEATS = [
     "Synthetic development content only; this is not a production-content test.",
     "Xvfb/X11 accessibility smoke evidence does not qualify GNOME Wayland or Orca.",
@@ -44,7 +52,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--activate-window", action="store_true", help="Activate/focus the X11 window before typing (requires a window manager).")
     parser.add_argument("--x11-window", help="Explicit X11 window ID for activation; otherwise discover it by the selected native PID.")
     parser.add_argument(
-        "--flow", choices=["read", "keyboard", "copy", "search", "prepare-note", "verify-note", "smoke"],
+        "--flow", choices=["read", "keyboard", "copy", "search", "prepare-note", "verify-note",
+                           "close-cancel-discard", "close-save", "verify-close-save", "smoke"],
         help="Run a staged flow; smoke runs read/keyboard/copy/search/prepare-note, without a restart.",
     )
     parser.add_argument(
@@ -63,6 +72,7 @@ def parse_args() -> argparse.Namespace:
         "--fixture-json", type=Path,
         default=Path(__file__).resolve().parents[2] / "content/fixtures/sample.json",
     )
+    parser.add_argument("--user-db", type=Path, help="Existing isolated development user.sqlite for close/failure flows.")
     args = parser.parse_args()
     if args.timeout <= 0 or args.timeout > 60 or args.max_nodes < 1 or args.max_depth < 1:
         parser.error("Use timeout in (0, 60] and positive tree bounds.")
@@ -70,6 +80,8 @@ def parse_args() -> argparse.Namespace:
         parser.error("--all-apps is discovery-only; select an application before running flows.")
     if args.flow and args.flow != "read" and not args.confirm_synthetic_profile:
         parser.error("Actions require --confirm-synthetic-profile and a disposable test session.")
+    if args.flow in {"close-cancel-discard", "close-save", "verify-close-save"} and args.user_db is None:
+        parser.error("Close flows require --user-db inside the isolated XDG_DATA_HOME/development profile.")
     return args
 
 
@@ -199,10 +211,32 @@ class NativeSmoke:
     def command(self, args: list[str], **kwargs) -> str:
         if shutil.which(args[0]) is None:
             raise SmokeFailure(f"Missing test-only executable: {args[0]}")
-        result = subprocess.run(args, capture_output=True, text=True, timeout=8, **kwargs)
+        try:
+            result = subprocess.run(args, capture_output=True, text=True, timeout=8, **kwargs)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise SmokeFailure(f"Command {args!r} could not complete: {error}") from error
         if result.returncode:
-            raise SmokeFailure(f"{args[0]} failed ({result.returncode}): {result.stderr.strip()[:500]}")
+            raise SmokeFailure(f"Command {args!r} failed ({result.returncode}): {result.stderr.strip()[:500]}")
         return result.stdout
+
+    def visible_windows(self, pid: int) -> list[str] | None:
+        args = ["xdotool", "search", "--onlyvisible", "--pid", str(pid)]
+        if shutil.which("xdotool") is None:
+            raise SmokeFailure("Missing test-only executable: xdotool")
+        try:
+            result = subprocess.run(args, capture_output=True, text=True, timeout=2)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise SmokeFailure(f"Command {args!r} could not complete: {error}") from error
+        if result.returncode in {0, 1} and not result.stdout.strip() and not result.stderr.strip():
+            probe = self.report.setdefault("x11_window_discovery", {"pid": pid, "transient_no_window": 0})
+            probe["transient_no_window"] += 1
+            return None
+        if result.returncode or result.stderr.strip():
+            raise SmokeFailure(f"Command {args!r} failed ({result.returncode}): {result.stderr.strip()[:500]}")
+        windows = result.stdout.splitlines()
+        if any(not window.isdecimal() for window in windows):
+            raise SmokeFailure(f"Command {args!r} returned unexpected window IDs: {windows!r}")
+        return windows
 
     def clipboard_text(self) -> str | None:
         """Probe UTF-8 clipboard ownership; retry only the known handover gap."""
@@ -237,19 +271,20 @@ class NativeSmoke:
         if not interface.do_action(action_index):
             raise SmokeFailure(f"Native action failed for {name!r}.")
 
+    def activate_window(self):
+        window = self.args.x11_window
+        if window is None:
+            pid = self.safe(self.root.get_process_id, 0)
+            if not pid:
+                raise SmokeFailure("Native window has no PID; pass --x11-window explicitly.")
+            windows = self.wait(f"visible X11 window for native PID {pid}", lambda: self.visible_windows(pid))
+            window = windows[0]
+        self.command(["xdotool", "windowactivate", "--sync", window])
+        self.command(["xdotool", "windowfocus", "--sync", window])
+
     def focus(self, name: str):
         if self.args.activate_window or self.args.x11_window:
-            window = self.args.x11_window
-            if window is None:
-                pid = self.safe(self.root.get_process_id, 0)
-                if not pid:
-                    raise SmokeFailure("Native window has no PID; pass --x11-window explicitly.")
-                windows = self.command(["xdotool", "search", "--onlyvisible", "--pid", str(pid)]).splitlines()
-                if not windows:
-                    raise SmokeFailure("No visible X11 window matches the selected native PID.")
-                window = windows[0]
-            self.command(["xdotool", "windowactivate", "--sync", window])
-            self.command(["xdotool", "windowfocus", "--sync", window])
+            self.activate_window()
         node = self.named(name)
         component = node.get_component_iface()
         if component is None or not component.grab_focus():
@@ -446,6 +481,149 @@ class NativeSmoke:
         self.activate(f"Open {BRIDGE}")
         self.wait("reopened note passage", lambda: self.selected(BRIDGE))
         self.report["restart_observation"] = "Saved note, anchor and reading position observed; caller must establish that a real process restart occurred."
+
+    def user_database(self) -> Path:
+        if self.args.user_db is None or not os.environ.get("XDG_DATA_HOME"):
+            raise SmokeFailure("Close tests need an explicit database and isolated XDG_DATA_HOME.")
+        path = self.args.user_db.resolve()
+        data_root = Path(os.environ["XDG_DATA_HOME"]).resolve()
+        if not path.is_relative_to(data_root) or path.name != "user.sqlite" or path.parent.name != "development":
+            raise SmokeFailure("Refusing to lock a database outside the isolated development profile.")
+        if not path.is_file():
+            raise SmokeFailure("The native application has not created its development user database.")
+        return path
+
+    def close_note_record(self):
+        with closing(sqlite3.connect(self.user_database().as_uri() + "?mode=ro", uri=True, timeout=2)) as connection:
+            records = [json.loads(row[0]) for row in connection.execute("SELECT json FROM note")]
+            if connection.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                raise SmokeFailure("Native user database integrity check failed.")
+        matches = [record for record in records if record["title"] == CLOSE_NOTE_TITLE]
+        if len(matches) != 1:
+            raise SmokeFailure(f"Expected one dedicated close-test note, found {len(matches)}.")
+        return matches[0]
+
+    @contextmanager
+    def locked_user_database(self):
+        # Reserve the SQLite writer without changing data. Real native writes
+        # reach their configured busy timeout; no application backdoor is used.
+        connection = sqlite3.connect(self.user_database().as_uri() + "?mode=rw", uri=True,
+                                     timeout=2, isolation_level=None)
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            yield
+        finally:
+            if connection.in_transaction:
+                connection.rollback()
+            connection.close()
+
+    def native_process_alive(self) -> bool:
+        pid = self.args.pid or self.report["native_root"]["pid"]
+        if not pid:
+            raise SmokeFailure("Close tests require an identifiable native process PID.")
+        try:
+            state = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[0]
+            return state not in {"Z", "X"}
+        except FileNotFoundError:
+            return False
+
+    def assert_native_alive(self):
+        if not self.native_process_alive():
+            raise SmokeFailure("Native process exited while it was required to retain the draft.")
+
+    def request_native_close(self):
+        self.activate_window()
+        # Openbox translates Alt+F4 to WM_DELETE_WINDOW. xdotool windowclose
+        # can destroy the X window and bypass the Tauri close-request guard.
+        self.command(["xdotool", "key", "--clearmodifiers", "alt+F4"])
+        self.report.setdefault("native_close_requests", 0)
+        self.report["native_close_requests"] += 1
+
+    def close_dialog(self):
+        dialog = self.named(CLOSE_DIALOG, roles={"dialog"})
+        self.assert_native_alive()
+        return dialog
+
+    def open_close_note(self, expected: str):
+        navigation = self.named("Workspace")
+        self.activate("My notes", prefix=True, root=navigation)
+        saved = self.named("Saved notes")
+        self.activate(CLOSE_NOTE_TITLE, prefix=True, root=saved, roles={"push button"})
+        self.wait("expected close-test note body", lambda: self.text(self.find("Note text")) == expected)
+        if self.close_note_record()["bodyText"] != expected:
+            raise SmokeFailure("Native editor and committed close-test record disagree.")
+
+    def close_cancel_discard(self):
+        navigation = self.named("Workspace")
+        self.activate("My notes", prefix=True, root=navigation)
+        self.activate("New note", roles={"push button"})
+        self.fill("Note title", CLOSE_NOTE_TITLE)
+        self.fill("Note text", CLOSE_BASELINE)
+        self.activate("Save", roles={"push button"})
+        self.wait("baseline note committed", lambda: self.has_text("Saved on this device"))
+        self.wait("baseline SQLite record", lambda: self.close_note_record()["bodyText"] == CLOSE_BASELINE)
+        with self.locked_user_database():
+            self.fill("Note text", CLOSE_DISCARDED)
+            self.wait("real store-busy autosave failure", lambda: self.has_text("Could not save"))
+            self.request_native_close()
+            dialog = self.close_dialog()
+            self.wait("default Cancel focus in close dialog", lambda: self.state(self.find("Cancel", root=dialog, roles={"push button"}), "FOCUSED"))
+            self.command(["xdotool", "key", "--clearmodifiers", "Escape"])
+            self.wait("close dialog cancelled", lambda: self.find(CLOSE_DIALOG, roles={"dialog"}) is None)
+            self.wait("Escape restores Note text focus", lambda: self.state(self.find("Note text"), "FOCUSED"))
+            self.assert_native_alive()
+            if self.text(self.named("Note text")) != CLOSE_DISCARDED:
+                raise SmokeFailure("Cancel lost the unsaved native draft.")
+            self.dump("close-cancel-retained-draft")
+            self.request_native_close()
+            self.activate("Discard changes", root=self.close_dialog(), roles={"push button"})
+            self.wait("native exit after Discard", lambda: not self.native_process_alive())
+            if self.close_note_record()["bodyText"] != CLOSE_BASELINE:
+                raise SmokeFailure("Discard changed the committed baseline record.")
+        self.report["close_guard"] = {
+            "request": "Openbox Alt+F4 / WM_DELETE_WINDOW", "cancel_retained_draft": True,
+            "initial_cancel_focused": True, "escape_cancel_restored_note_text_focus": True,
+            "discard_exited": True, "discard_retained_committed_baseline": True,
+            "failure_source": "External SQLite BEGIN IMMEDIATE reservation; real busy-timeout failure, not disk-full.",
+        }
+
+    def close_save(self):
+        self.open_close_note(CLOSE_BASELINE)
+        with self.locked_user_database():
+            self.fill("Note text", CLOSE_SAVED)
+            self.wait("real store-busy autosave failure", lambda: self.has_text("Could not save"))
+            self.request_native_close()
+            self.activate("Save and close", root=self.close_dialog(), roles={"push button"})
+            self.wait("failed close-save error", lambda: self.has_text("Your note could not be saved. The window is still open."))
+            self.assert_native_alive()
+            self.close_dialog()
+            if self.close_note_record()["bodyText"] != CLOSE_BASELINE:
+                raise SmokeFailure("Blocked close-save unexpectedly changed committed data.")
+            self.dump("close-save-failed-window-open")
+            self.activate("Cancel", root=self.close_dialog(), roles={"push button"})
+            self.wait("failed close-save cancelled", lambda: self.find(CLOSE_DIALOG, roles={"dialog"}) is None)
+            if self.text(self.named("Note text")) != CLOSE_SAVED:
+                raise SmokeFailure("Failed Save and close lost the editable draft.")
+            self.request_native_close()
+            self.close_dialog()
+        # Release the external lock before the user explicitly retries Save.
+        self.activate("Save and close", root=self.close_dialog(), roles={"push button"})
+        self.wait("native exit after successful Save and close", lambda: not self.native_process_alive())
+        if self.close_note_record()["bodyText"] != CLOSE_SAVED:
+            raise SmokeFailure("Native process exited without committing the requested close-save text.")
+        self.report["close_guard"] = {
+            "request": "Openbox Alt+F4 / WM_DELETE_WINDOW", "blocked_save_retained_window_and_draft": True,
+            "retry_committed_before_exit": True, "failure_source": "Real SQLite busy timeout; not disk-full.",
+        }
+
+    def verify_close_save(self):
+        self.open_close_note(CLOSE_SAVED)
+        self.request_native_close()
+        self.wait("clean native close without dirty-note prompt", lambda: not self.native_process_alive())
+        self.report["close_guard"] = {
+            "restarted_editor_recovered_saved_text": True, "clean_alt_f4_exited": True,
+            "request": "Openbox Alt+F4 / WM_DELETE_WINDOW",
+        }
 
 
 def main() -> int:
