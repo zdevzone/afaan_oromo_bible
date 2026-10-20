@@ -1,0 +1,11 @@
+# Scripture tooling — Phase 1 status
+
+No real Scripture importer is implemented yet. Do not interpret the synthetic fixture as an authorized edition or production content pack. The selected source, rights and USFM parser still require verification under [the pipeline specification](../../docs/SCRIPTURE_PIPELINE.md).
+
+Current inspectable format is `content/fixtures/sample.json`: one `FixturePack` containing an edition, ordered books, and structured chapters. `manifest.json` explicitly marks it synthetic and distribution-unapproved. Its SHA-256 is over the exact UTF-8 `sample.json` bytes, including the final newline. Each verse unit's `textDigest` is SHA-256 over its exact UTF-8 `textPlain`. Unit identities serialize `[editionId, versificationId, bookCode, chapterLabel, sourceVerseLabel]` as compact JSON.
+
+The fixture contains two invented books, adjacent chapters, heading/paragraph/poetry structure, footnote/cross-reference callouts, a bridge, subdivisions, and mechanical Unicode search cases. All prose is software-test material, **not Scripture**. The AST's text runs project exactly to unit text; footnote/reference bodies are excluded from that projection. Validation rejects duplicate labels/units, missing mappings and inconsistent projected text.
+
+The deliberately bounded development search profile is `fixture-latin-v1`: NFC; fold ASCII A–Z, Latin-1 uppercase U+00C0–U+00D6/U+00D8–U+00DE and U+0178; map U+2019 to ASCII apostrophe only; NFC again. Tokenize Unicode letters/marks/numbers with apostrophes retained only inside a token, then join tokens with spaces for the derived projection. U+02BC remains distinct. This is not full Unicode case folding, linguistic Oromo analysis, or a fluently approved production profile. Browser/native conformance and fluent review are required before indexing real content. Source display text is never changed.
+
+Next pipeline work, after edition permission and parser evaluation: source acquisition/checksum → structured parse → normalized AST/explicit label mappings → integrity reports → deterministic immutable SQLite with FTS5 → signed/reviewed distribution manifest. No runtime content download or USFM parsing belongs in the reader. See [SCRIPTURE_PIPELINE.md](../../docs/SCRIPTURE_PIPELINE.md) for release gates.

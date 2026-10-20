@@ -1,0 +1,11 @@
+{
+  "formatVersion": 1,
+  "packId": "synthetic-development-fixture",
+  "synthetic": true,
+  "warning": "SOFTWARE TEST CONTENT. NOT SCRIPTURE. NEVER DISTRIBUTE AS A BIBLE EDITION.",
+  "contentRevision": "fixture-1",
+  "sourceArchiveSha256": null,
+  "normalizedContentSha256": "53291753e5c1edb0fdfbe92bda84c4ea376e5c0f2b82723d09091e5e93dba6e0",
+  "searchProfileVersion": "fixture-latin-v1",
+  "distributionApproved": false
+}

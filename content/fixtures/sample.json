@@ -1,0 +1,306 @@
+{
+  "formatVersion": 1,
+  "edition": {
+    "id": "synthetic-development",
+    "title": "Synthetic Development Fixture — NOT SCRIPTURE",
+    "abbreviation": "TEST ONLY",
+    "languageTag": "en",
+    "versificationId": "synthetic-v1",
+    "contentRevision": "fixture-1",
+    "canonId": "synthetic-two-book-set",
+    "isSynthetic": true,
+    "attribution": "Invented software-test sentences. No Bible edition is represented.",
+    "licenseNotice": "Project-authored synthetic fixture; excluded from public production builds."
+  },
+  "books": [
+    {
+      "editionId": "synthetic-development",
+      "code": "TSA",
+      "name": "Sample Book A",
+      "aliases": [
+        "Sample A",
+        "Test A",
+        "TSA"
+      ],
+      "order": 0,
+      "chapters": [
+        "1",
+        "2"
+      ]
+    },
+    {
+      "editionId": "synthetic-development",
+      "code": "TSB",
+      "name": "Sample Book B",
+      "aliases": [
+        "Sample B",
+        "Test B",
+        "TSB"
+      ],
+      "order": 1,
+      "chapters": [
+        "1"
+      ]
+    }
+  ],
+  "chapters": [
+    {
+      "editionId": "synthetic-development",
+      "bookCode": "TSA",
+      "chapterLabel": "1",
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Synthetic test content — not Scripture"
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "verse",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"1\"]"
+            },
+            {
+              "type": "text",
+              "text": "Synthetic test sentence: careful reading keeps notes available offline."
+            },
+            {
+              "type": "footnote",
+              "id": "synthetic-note-1",
+              "caller": "a",
+              "text": "Synthetic footnote body for layout testing; not commentary."
+            },
+            {
+              "type": "crossReference",
+              "id": "synthetic-reference-1",
+              "caller": "b",
+              "text": "Sample Book B 1:1 (synthetic reference)",
+              "target": {
+                "bookCode": "TSB",
+                "chapterLabel": "1",
+                "verseLabel": "1"
+              }
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "verse",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"2-3\"]"
+            },
+            {
+              "type": "text",
+              "text": "Synthetic spelling fixture: WAaqaa ga’ee café aa bba."
+            }
+          ]
+        },
+        {
+          "type": "poetry",
+          "level": 1,
+          "children": [
+            {
+              "type": "verse",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"4a\"]"
+            },
+            {
+              "type": "text",
+              "text": "Synthetic poetry line: careful reading."
+            }
+          ]
+        },
+        {
+          "type": "poetry",
+          "level": 1,
+          "children": [
+            {
+              "type": "verse",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"4b\"]"
+            },
+            {
+              "type": "text",
+              "text": "Synthetic poetry line: notes remain local."
+            }
+          ]
+        }
+      ],
+      "verseUnits": [
+        {
+          "key": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"1\"]",
+          "label": "1",
+          "order": 0,
+          "textPlain": "Synthetic test sentence: careful reading keeps notes available offline.",
+          "textDigest": "90998df4f312f8d514772d3f15d138966bc2cf0b5d7c82fdb9ff373ce8b53f42"
+        },
+        {
+          "key": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"2-3\"]",
+          "label": "2-3",
+          "order": 1,
+          "textPlain": "Synthetic spelling fixture: WAaqaa ga’ee café aa bba.",
+          "textDigest": "84073b722af1f1eaf6c0ba138ac5ff9255d9796667f35e082fa35ff206cfff0c"
+        },
+        {
+          "key": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"4a\"]",
+          "label": "4a",
+          "order": 2,
+          "textPlain": "Synthetic poetry line: careful reading.",
+          "textDigest": "ab6e5f3be5dd5f88937314171b7c2b748095496710cee38281d2868bf3923f46"
+        },
+        {
+          "key": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"4b\"]",
+          "label": "4b",
+          "order": 3,
+          "textPlain": "Synthetic poetry line: notes remain local.",
+          "textDigest": "55f492f5d1046f4dfbdb62c3c2e5cc09ba61e2f1ba4a1d0adbbad7d6f7bef623"
+        }
+      ],
+      "referenceLookup": {
+        "1": [
+          "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"1\"]"
+        ],
+        "2-3": [
+          "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"2-3\"]"
+        ],
+        "4a": [
+          "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"4a\"]"
+        ],
+        "4b": [
+          "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"4b\"]"
+        ],
+        "2": [
+          "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"2-3\"]"
+        ],
+        "3": [
+          "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"2-3\"]"
+        ],
+        "4": [
+          "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"4a\"]",
+          "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"4b\"]"
+        ]
+      }
+    },
+    {
+      "editionId": "synthetic-development",
+      "bookCode": "TSA",
+      "chapterLabel": "2",
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Synthetic test content — not Scripture"
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "verse",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"2\",\"1\"]"
+            },
+            {
+              "type": "text",
+              "text": "Synthetic test sentence: a bookmark returns to this test chapter."
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "verse",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"2\",\"2\"]"
+            },
+            {
+              "type": "text",
+              "text": "Synthetic spelling fixture: gaʼee cafe a ba; these forms stay distinct."
+            }
+          ]
+        }
+      ],
+      "verseUnits": [
+        {
+          "key": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"2\",\"1\"]",
+          "label": "1",
+          "order": 0,
+          "textPlain": "Synthetic test sentence: a bookmark returns to this test chapter.",
+          "textDigest": "7897f8bfdc34e5762b123d204649be22a96f1b76c2858c45da2e1284bfc039c4"
+        },
+        {
+          "key": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"2\",\"2\"]",
+          "label": "2",
+          "order": 1,
+          "textPlain": "Synthetic spelling fixture: gaʼee cafe a ba; these forms stay distinct.",
+          "textDigest": "9eff450779133cfe41a014bb2bd53dcb9e8a445b61423689c84fc10617dda9f7"
+        }
+      ],
+      "referenceLookup": {
+        "1": [
+          "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"2\",\"1\"]"
+        ],
+        "2": [
+          "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"2\",\"2\"]"
+        ]
+      }
+    },
+    {
+      "editionId": "synthetic-development",
+      "bookCode": "TSB",
+      "chapterLabel": "1",
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Synthetic test content — not Scripture"
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "verse",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSB\",\"1\",\"1\"]"
+            },
+            {
+              "type": "text",
+              "text": "Synthetic test sentence: careful reading supports a reliable local draft."
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "verse",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSB\",\"1\",\"2\"]"
+            },
+            {
+              "type": "text",
+              "text": "Synthetic test sentence: sample search results remain in source order."
+            }
+          ]
+        }
+      ],
+      "verseUnits": [
+        {
+          "key": "[\"synthetic-development\",\"synthetic-v1\",\"TSB\",\"1\",\"1\"]",
+          "label": "1",
+          "order": 0,
+          "textPlain": "Synthetic test sentence: careful reading supports a reliable local draft.",
+          "textDigest": "6204e81819e9ba65f0c3e822743a2a1850f1731879e290ad86231581b25ac4fa"
+        },
+        {
+          "key": "[\"synthetic-development\",\"synthetic-v1\",\"TSB\",\"1\",\"2\"]",
+          "label": "2",
+          "order": 1,
+          "textPlain": "Synthetic test sentence: sample search results remain in source order.",
+          "textDigest": "bb7fc5bf3fcf6c641cbae4c0de9b0c8ec8d2ae69e20001e7482cfafc1d543ec6"
+        }
+      ],
+      "referenceLookup": {
+        "1": [
+          "[\"synthetic-development\",\"synthetic-v1\",\"TSB\",\"1\",\"1\"]"
+        ],
+        "2": [
+          "[\"synthetic-development\",\"synthetic-v1\",\"TSB\",\"1\",\"2\"]"
+        ]
+      }
+    }
+  ]
+}
