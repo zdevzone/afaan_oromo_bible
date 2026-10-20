@@ -37,7 +37,7 @@ The native window-close guard is implemented and verified in `.tooling/linux/clo
 
 Linux is included in V1 scope. The proposed first qualification target is **Ubuntu 24.04 LTS x86_64 with GNOME**, using a `.deb` package. This is a target to test, not a claim of working support today. Other distributions, desktop environments and ARM devices need separate qualification; an AppImage is optional later packaging work. The same React/Tauri application and SQLite adapters serve all three operating systems. See the [release matrix](docs/RELEASE_STRATEGY.md) for the owning platform and distribution decisions.
 
-The [native CI workflow](.github/workflows/native-checks.yml) now defines frontend checks followed by native compilation and SQLite repository tests on Ubuntu 24.04 x64, Windows Server 2022 x64, and macOS 15 Apple silicon/Intel runners. It uses pinned Vite+/Node/Rust, frozen lockfiles, debug builds and dependency caches. YAML parsing, wrapper syntax and Vite+ checks pass locally; hosted execution is pending. This workflow does not launch a desktop window, publish binaries, sign packages or establish supported-OS qualification. See [the automated-check scope](docs/TESTING_STRATEGY.md#automated-build-checks) for its limits.
+The [first hosted native CI run](https://github.com/zdevzone/afaan_oromo_bible/actions/runs/39460355228), at source commit `12e66601e58dbdc212c496efb9c3285dd39d56bf`, passes all five jobs: frontend checks and native builds on Ubuntu 24.04 x64, Windows Server 2022 x64, macOS 15 Apple silicon and macOS 15 Intel. The frontend passes 71 tests and both Chromium journeys; each native target passes 12 SQLite tests and embedded debug compilation. The [workflow](.github/workflows/native-checks.yml) uses pinned Vite+/Node/Rust, frozen lockfiles and dependency caches. It does not launch a desktop window, publish binaries, sign packages or establish supported-OS qualification. See [the automated-check scope](docs/TESTING_STRATEGY.md#automated-build-checks) for its limits.
 
 ## Development
 
@@ -116,7 +116,7 @@ Shadcnblocks Pro is the primary UI resource. The public catalog and underlying R
 
 Next, in order:
 
-1. Run the native CI matrix and resolve platform-specific compilation/test failures. Then repeat the passing Linux native slice and close guard in the proposed Ubuntu/GNOME target's Wayland and X11 sessions, including manual Orca review. Use the [Ubuntu container guide](tools/linux/README.md) for fast Linux build/smoke iteration here.
+1. Preserve the passing cross-platform build matrix. Repeat the passing Linux native slice and close guard in the proposed Ubuntu/GNOME target's Wayland and X11 sessions, including manual Orca review. Use the [Ubuntu container guide](tools/linux/README.md) for fast Linux build/smoke iteration here.
 2. Prepare Windows/macOS hosts, demonstrate their native loops and close decisions, and implement/test the separate macOS application-level quit paths. Keep Phase 1 open until those platform gates pass.
 3. Confirm the initial Afaan Oromo edition, authorized structured source, redistribution permissions and attribution. Provide the purchased Shadcnblocks source through an appropriate private resource and review its exact terms.
 4. Proceed to Phase 2's full-corpus pipeline and remaining required V1 features in the [roadmap](docs/ROADMAP.md). AI and synchronization remain later work.

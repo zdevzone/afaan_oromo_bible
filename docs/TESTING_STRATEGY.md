@@ -25,7 +25,7 @@ Run fast checks on changes and the full relevant suite before a milestone. Broad
 
 ## Automated build checks
 
-The authored [native-checks workflow](../.github/workflows/native-checks.yml) runs for relevant source changes in pull requests, matching pushes to `main`, and manual dispatch. **Hosted execution remains pending until an actual run and its results are recorded.** The workflow's presence is not passing Windows/macOS evidence.
+The [native-checks workflow](../.github/workflows/native-checks.yml) runs for relevant source changes in pull requests, matching pushes to `main`, and manual dispatch once available on the default branch. The [first hosted run](https://github.com/zdevzone/afaan_oromo_bible/actions/runs/39460355228) passes all five jobs at source commit `12e66601e58dbdc212c496efb9c3285dd39d56bf`: frontend checks (71 unit/hook tests and two Chromium journeys), plus 12 SQLite tests and embedded debug compilation on each of the four native targets below. Logs confirm Rust 1.90.0 and native host triples for Linux x64, Windows MSVC x64, Apple silicon and Intel Mac. This is passing compilation/repository-test evidence; Windows/macOS GUI evidence remains pending.
 
 The frontend job performs frozen dependency installation, Varlock declaration generation and TypeScript checking, Vite+ checks, unit/hook tests, a browser build and the two existing Chromium journeys. Native jobs depend on that job and use these build hosts:
 
