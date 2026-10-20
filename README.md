@@ -37,6 +37,8 @@ The native window-close guard is implemented and verified in `.tooling/linux/clo
 
 Linux is included in V1 scope. The proposed first qualification target is **Ubuntu 24.04 LTS x86_64 with GNOME**, using a `.deb` package. This is a target to test, not a claim of working support today. Other distributions, desktop environments and ARM devices need separate qualification; an AppImage is optional later packaging work. The same React/Tauri application and SQLite adapters serve all three operating systems. See the [release matrix](docs/RELEASE_STRATEGY.md) for the owning platform and distribution decisions.
 
+The [native CI workflow](.github/workflows/native-checks.yml) now defines frontend checks followed by native compilation and SQLite repository tests on Ubuntu 24.04 x64, Windows Server 2022 x64, and macOS 15 Apple silicon/Intel runners. It uses pinned Vite+/Node/Rust, frozen lockfiles, debug builds and dependency caches. YAML parsing, wrapper syntax and Vite+ checks pass locally; hosted execution is pending. This workflow does not launch a desktop window, publish binaries, sign packages or establish supported-OS qualification. See [the automated-check scope](docs/TESTING_STRATEGY.md#automated-build-checks) for its limits.
+
 ## Development
 
 Check `vp --version` before installing the global CLI. Use the [official Vite+ installation instructions](https://viteplus.dev/guide/). Keep the project-local version and matching core override; do not substitute plain Vite. The committed JavaScript and Cargo graphs have been installed/resolved on this Linux host; clean installations on the supported Windows, macOS and Linux matrix remain part of native validation.
@@ -104,7 +106,7 @@ cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --features
 cargo fmt --manifest-path src-tauri/Cargo.toml --check
 ```
 
-`vp run desktop:check` is an internal native compilation using test content without packaging. `vp run public:build` deliberately fails until the authorized-content pipeline and release gates exist. Do not weaken this gate to make a test build appear publicly releasable. Required Windows/macOS/Linux native checks, accessibility review, platform-appropriate artifact verification and real-content validation remain open.
+`vp run desktop:check` is an internal embedded debug compilation using test content, without packaging, and with Cargo's lockfile enforced. `vp run public:build` deliberately fails until the authorized-content pipeline and release gates exist. Do not weaken this gate to make a test build appear publicly releasable. Required Windows/macOS/Linux native checks, accessibility review, platform-appropriate artifact verification and real-content validation remain open.
 
 ## Working rules
 
@@ -114,7 +116,7 @@ Shadcnblocks Pro is the primary UI resource. The public catalog and underlying R
 
 Next, in order:
 
-1. Repeat the passing Linux native slice and close guard in the proposed Ubuntu/GNOME target's Wayland and X11 sessions, including manual Orca review. Use the [Ubuntu container guide](tools/linux/README.md) for fast Linux build/smoke iteration here.
+1. Run the native CI matrix and resolve platform-specific compilation/test failures. Then repeat the passing Linux native slice and close guard in the proposed Ubuntu/GNOME target's Wayland and X11 sessions, including manual Orca review. Use the [Ubuntu container guide](tools/linux/README.md) for fast Linux build/smoke iteration here.
 2. Prepare Windows/macOS hosts, demonstrate their native loops and close decisions, and implement/test the separate macOS application-level quit paths. Keep Phase 1 open until those platform gates pass.
 3. Confirm the initial Afaan Oromo edition, authorized structured source, redistribution permissions and attribution. Provide the purchased Shadcnblocks source through an appropriate private resource and review its exact terms.
 4. Proceed to Phase 2's full-corpus pipeline and remaining required V1 features in the [roadmap](docs/ROADMAP.md). AI and synchronization remain later work.

@@ -90,7 +90,7 @@ vp run desktop:dev
 vp run desktop:check
 ```
 
-`tools/native.mjs` sets `APP_TARGET=tauri` before Tauri starts the renderer hooks and explicitly enables the internal `development-content` feature. `desktop:check` compiles without bundling; it is not a signed release check. Do not bypass this selection by invoking the raw Tauri CLI with the default browser target. `vp run public:build` deliberately rejects public packaging until the authorized-content pipeline and release gates exist.
+`tools/native.mjs` sets `APP_TARGET=tauri` before Tauri starts the renderer hooks and explicitly enables the internal `development-content` feature. `desktop:check` uses an embedded debug build without bundling and forwards `--locked` to Cargo. It avoids release optimization during integration checks and rejects dependency-lock changes; it is not a signed release check. Do not bypass this selection by invoking the raw Tauri CLI with the default browser target. `vp run public:build` deliberately rejects public packaging until the authorized-content pipeline and release gates exist.
 
 Use `.deb` as the primary planned Linux V1 package and qualify it on a clean baseline host: installation with declared runtime dependencies, native launch, offline reading, persistence/restart, clipboard, backup/restore and the package lifecycle checks in [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md). Do not claim the package contains a complete system WebKit or supports untested Linux distributions. Keep all data paths resolved through Tauri rather than adding hard-coded Unix locations.
 

@@ -67,7 +67,7 @@ Status: Phase 1 scaffold established as one application. The tree shows the curr
 │   ├── sources/               # Future ignored, permission-scoped source archives
 │   └── generated/             # Future ignored output; release-approved packs only
 ├── tools/
-│   ├── native.mjs             # Cross-platform target/feature selection for Tauri
+│   ├── native.mjs             # Tauri target/feature selection; locked debug desktop:check
 │   ├── check-release.mjs      # Reject public packaging until real content gates exist
 │   ├── linux/                 # Ubuntu dev image and real AT-SPI/X11 native smoke runner
 │   └── scripture/
@@ -89,7 +89,8 @@ Status: Phase 1 scaffold established as one application. The tree shows the curr
 │   ├── contracts/             # Future shared contracts when tests span adapters
 │   ├── content/               # Future full-import integrity cases
 │   └── e2e/                   # Browser workflows; native tests added when wired
-└── .github/workflows/         # Future CI configurations as build hosts are established
+└── .github/workflows/
+    └── native-checks.yml      # Frontend checks and four native build-host/architecture jobs
 ```
 
 ## Practical rules
@@ -103,6 +104,8 @@ Keep native APIs in `src/adapters/tauri` and Rust repositories. A reader compone
 The native window port is created before editable UI mounts; the platform listener always prevents close requests while the application hook owns the current save/discard/cancel decision. Keep `core:window:allow-destroy` scoped to `main` in `src-tauri/capabilities/default.json`. The notes hook exposes latest-buffer checks, pause/resume, flush and discard without importing Tauri. Its `beforeunload` warning is browser-only. Window close does not cover macOS application-menu/Command-Q/Dock quit; those paths still need native qualification. Mechanisms and behavior are owned by [ARCHITECTURE.md](ARCHITECTURE.md) and [FEATURE_SPECIFICATIONS.md](FEATURE_SPECIFICATIONS.md).
 
 Windows, macOS and Linux use these same React features, Tauri adapters and Rust repositories. Do not create a separate Linux application or storage implementation. Linux is a required V1 target; the proposed initial qualification baseline is Ubuntu 24.04 LTS x86_64/GNOME, with `.deb` as the primary planned artifact. Keep platform package configuration under `src-tauri` and native build/test CI under `.github/workflows` as implemented. The support and package gates are owned by [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md), not inferred from the presence of a Linux configuration file.
+
+The authored [native-checks workflow](../.github/workflows/native-checks.yml) performs frontend checks and native SQLite tests/debug compilation on Ubuntu 24.04 x64, Windows Server 2022 x64, macOS 15 ARM64 and macOS 15 Intel hosts. It uses pinned action commits, Vite+ `1.3.0`, the repository Node/Rust versions and frozen lockfiles; hosted execution is pending until recorded. `tools/native.mjs` owns `desktop:check` target selection and its `--debug --no-bundle -- --locked` build arguments. CI does not create another application or bypass the public-content gate. Automated scope, cache/build limits and the distinction from GUI/platform qualification are owned by [TESTING_STRATEGY.md](TESTING_STRATEGY.md#automated-build-checks).
 
 Copy licensed components into `src/components/ui` or an appropriately named subfolder after reviewing actual source. Track provenance and access restrictions in the component inventory section of [UI_UX_GUIDELINES.md](UI_UX_GUIDELINES.md). Do not publish the paid component source in a public repository without confirming that the purchased terms authorize it. The finished application may include components as permitted by that license.
 

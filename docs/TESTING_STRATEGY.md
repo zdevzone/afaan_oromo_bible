@@ -23,6 +23,27 @@ Default tooling is Vitest through Vite+, React Testing Library with user-event, 
 
 Run fast checks on changes and the full relevant suite before a milestone. Broaden testing when changes affect additional boundaries; do not rerun every unrelated test after documentation-only edits. Record blocked tests as blocked, with the missing environment or input.
 
+## Automated build checks
+
+The authored [native-checks workflow](../.github/workflows/native-checks.yml) runs for relevant source changes in pull requests, matching pushes to `main`, and manual dispatch. **Hosted execution remains pending until an actual run and its results are recorded.** The workflow's presence is not passing Windows/macOS evidence.
+
+The frontend job performs frozen dependency installation, Varlock declaration generation and TypeScript checking, Vite+ checks, unit/hook tests, a browser build and the two existing Chromium journeys. Native jobs depend on that job and use these build hosts:
+
+| Hosted runner    | Expected architecture | Automated scope                                                              |
+| ---------------- | --------------------- | ---------------------------------------------------------------------------- |
+| `ubuntu-24.04`   | x64                   | Headless SQLite tests, Rust formatting/Clippy and embedded debug compilation |
+| `windows-2022`   | x64                   | Headless SQLite tests and embedded debug compilation                         |
+| `macos-15`       | ARM64                 | Headless SQLite tests and embedded debug compilation                         |
+| `macos-15-intel` | x64                   | Headless SQLite tests and embedded debug compilation                         |
+
+The workflow records actual host/tool versions and checks the Node architecture against the matrix. These are build hosts, not a revised supported-OS matrix: Windows Server 2022 compilation does not qualify Windows 11, and macOS 15 compilation does not qualify the proposed macOS 14 floor. Platform support remains governed by [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md).
+
+Use the official Vite+ setup action with Vite+ `1.3.0` and `.node-version`; Rust comes from `rust-toolchain.toml`, including rustfmt and Clippy. Action references use immutable commit SHAs. JavaScript installation uses `--frozen-lockfile`; native tests and compilation retain the Cargo lockfile. `vp run desktop:check` selects the native renderer and explicit synthetic-content feature, then runs a debug build with `--no-bundle` and forwarded Cargo `--locked`. Development-server behavior and the public-content release gate are unchanged.
+
+Dependency caches, two Cargo build jobs per native runner and disabled debug symbols reduce repeated compilation work. New runs cancel superseded runs; path filters avoid native rebuilds for unrelated prose. Repository access is read-only, checkout does not retain credentials, and no signing secrets, application bundles or release uploads are involved.
+
+For each hosted run, retain its URL, source commit and per-job result in the [repository status](../README.md#current-status). Resolve failed steps before treating a platform compile check as passed. A green workflow proves its listed tests and compilation only: it does not launch a native window, exercise offline desktop IPC/clipboard, guard macOS application-level Quit, review screen-reader behavior, or qualify installers. The native journeys and release gates below remain required.
+
 ## Fixtures and content integrity
 
 Maintain a tiny, conspicuously labeled synthetic corpus covering prose, headings, paragraphs, poetry, footnotes, cross-references, non-ASCII text, chapter boundaries, a verse bridge, a subverse, and a missing optional target. It must not imply an actual Oromo edition, invent Bible quotations, or enter public builds. Reference examples and expected text in tests are fixture data, not theological claims.

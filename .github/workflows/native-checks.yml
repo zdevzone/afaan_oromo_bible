@@ -1,0 +1,139 @@
+name: Native checks
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/native-checks.yml"
+      - ".env.schema"
+      - ".node-version"
+      - "*.json"
+      - "*.ts"
+      - "pnpm-*.yaml"
+      - "rust-toolchain.toml"
+      - "src/**"
+      - "src-tauri/**"
+      - "content/fixtures/**"
+      - "public/**"
+      - "tests/**"
+      - "tools/native.mjs"
+      - "tools/check-release.mjs"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/native-checks.yml"
+      - ".env.schema"
+      - ".node-version"
+      - "*.json"
+      - "*.ts"
+      - "pnpm-*.yaml"
+      - "rust-toolchain.toml"
+      - "src/**"
+      - "src-tauri/**"
+      - "content/fixtures/**"
+      - "public/**"
+      - "tests/**"
+      - "tools/native.mjs"
+      - "tools/check-release.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          version: "1.3.0"
+          node-version-file: .node-version
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - run: vp run typecheck
+      - run: vp check
+      - run: vp test
+      - run: vp build
+      - run: vp exec playwright install --with-deps chromium
+      - run: vp run test:e2e
+
+  native:
+    name: Native compile / ${{ matrix.runner }} / ${{ matrix.arch }}
+    needs: frontend
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x64
+          - runner: windows-2022
+            arch: x64
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x64
+    defaults:
+      run:
+        shell: bash
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          version: "1.3.0"
+          node-version-file: .node-version
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - name: Install the repository's pinned Rust toolchain
+        # rustup reads rust-toolchain.toml, including rustfmt and Clippy.
+        run: rustup show
+      - name: Record build host and tool versions
+        env:
+          EXPECTED_ARCH: ${{ matrix.arch }}
+        run: |
+          node -e "console.log(process.platform, process.arch); if (process.arch !== process.env.EXPECTED_ARCH) process.exit(1)"
+          node --version
+          vp --version
+          rustc -vV
+          cargo --version
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: src-tauri -> target
+          key: ${{ matrix.runner }}-debug-development-content
+          cache-on-failure: false
+          save-if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+      - name: Install Linux native build prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      - name: Check Rust formatting
+        if: runner.os == 'Linux'
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+      - name: Test native SQLite repositories
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --features development-content
+      - name: Check headless Rust code
+        if: runner.os == 'Linux'
+        run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --features development-content --all-targets -- -D warnings
+      - name: Compile the embedded internal desktop application
+        # Debug build, locked Cargo graph, synthetic content, no bundle/signing/upload.
+        # This establishes compilation, not a GUI launch or OS qualification.
+        run: vp run desktop:check

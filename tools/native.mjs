@@ -12,7 +12,7 @@ if (action === "release") {
 
 const args = ["exec", "tauri", action === "dev" ? "dev" : "build"];
 if (action !== "release") args.push("--features", "development-content");
-if (action === "check") args.push("--no-bundle");
+if (action === "check") args.push("--debug", "--no-bundle", "--", "--locked");
 
 const child = spawn("vp", args, {
   cwd: fileURLToPath(new URL("..", import.meta.url)),
