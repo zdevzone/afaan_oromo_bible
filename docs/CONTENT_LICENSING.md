@@ -24,6 +24,23 @@ The following entries are **candidates/pointers from the supplied brief, not ind
 
 Do not make market claims such as "first Oromo desktop Bible" without separate research. Existing modules or websites prove neither product compatibility nor distribution rights.
 
+## Uploaded OOCS 2024 candidate
+
+Inspected 2026-10-21: the user supplied `text-4d4cf8432222fef3-299488.zip` (1,950,509 bytes), SHA-256 `ec543152e54faac1112e95ce74bc79ed2f20f26558edeef4b1b64fc96d608106`. Its metadata identifies **Biblica® Open Oromo Contemporary Scriptures 2024** (OOCS; local KQTAB), **Biblica® Katabbiiwwan Qulqulluu, Turjumaana Ammayyaa Banamaa™**, copyright © 2024 Biblica, Inc. The language is West Central Oromo (`gaz`), Latin/LTR; completion date is 2024-07-01. DBL ID is `4d4cf8432222fef3`, metadata revision `1`. Do not equate the filename suffix with a verified revision, or substitute the brief's separate 2022 edition.
+
+On 2026-10-21 the user identified [Library.Bible's content catalog](https://app.library.bible/content) as the download source. Record this as user-reported acquisition provenance; the original download date and an independently verified catalog-entry/revision match are not established. Digital Bible Library's official guidance documents [USX text bundles](https://care.library.bible/article/252-frequently-asked-questions), [Open access and resource-specific license conditions](https://care.library.bible/article/158-content-license), and [ZIP downloads](https://care.library.bible/article/160-downloading-content-with-permission). These confirm the distribution mechanism, not this exact archive's provenance or permissions. The exact catalog entry was not independently accessible during inspection.
+
+The supplied `metadata.xml` has an explicit **CC BY-SA 4.0** notice in `promotion/promoVersionInfo`. Its separate `license.xml` records `accessType=open`, license date 2025-08-03, and permission to include introductions, footnotes, cross-references and extended notes. The latter flags alone are not the complete license. Evidence hashes:
+
+- `metadata.xml`: `1cbf7fb8f46518e28dad6bf1d934215fadc61e52c6fa2d43ad0f02fb6623c75c`.
+- `license.xml`: `b2d6d6dd98167c7a974707196dbee45c0eae867d9168733c37598ab03d3add74`.
+
+Retain the exact supplied copyright, title and license notices in the eventual content pack and offline edition information. The supplied notice distinguishes unmodified redistribution, which retains Biblica® branding, from modified/translated derivatives, which remove the trademark, identify changes, provide the specified original-work attribution and retain the share-alike license. Do not imply publisher endorsement or use its trademark as the application's own branding.
+
+The [CC BY-SA 4.0 legal code, §2(a)(4)](https://creativecommons.org/licenses/by-sa/4.0/legalcode.en) permits necessary technical format changes and says those changes alone do not create Adapted Material. A lossless USX-to-SQLite conversion is not automatically an editorial adaptation requiring a new permission letter. Preserve wording and notices; assess any additional creative changes, database rights and trademark use against the applicable terms. The content license does not, by itself, settle the licensing of unrelated application code.
+
+**Disposition:** technically suitable source candidate with a supplied open-license notice and a user-reported Library.Bible download source. An independent exact catalog-entry/revision match, intended-audience review, import equivalence and production resource approval remain pending. No additional permission letter is presumed necessary for uses already covered by the supplied license. No public production content pack is approved by this inspection. Raw uploads remain outside published source; the source-specific technical findings are owned by [SCRIPTURE_PIPELINE.md](SCRIPTURE_PIPELINE.md#uploaded-usx-candidate--inspected-2026-10-21).
+
 ## Required record per resource
 
 Maintain a machine-readable resource manifest alongside build metadata and a human-readable approval record. For each Bible, commentary, cross-reference dataset, font, icon set or UI resource record:
@@ -39,7 +56,7 @@ Engineering validates manifest completeness; the product/content owner makes and
 
 ## Open-license handling
 
-If the selected source is verified under CC BY-SA 4.0, retain proper attribution, link/include the exact license, identify modifications as required, and assess share-alike obligations for transformed/distributed content. USFM-to-AST/SQLite conversion is a technical transformation whose legal treatment and notices must be assessed against the exact terms. Do not silently rewrite Scripture; preserve source wording regardless of what a license might permit.
+If the selected source is verified under CC BY-SA 4.0, retain proper attribution, link/include the exact license, identify modifications as required, and assess share-alike obligations for transformed/distributed content. Distinguish USX/USFM-to-AST/SQLite technical format changes under §2(a)(4) from editorial adaptations and separately assess database/trademark obligations. Do not silently rewrite Scripture; preserve source wording regardless of what a license might permit.
 
 Do not assume a content license automatically relicenses unrelated application code, or assume the opposite without assessing how the artifact is packaged. Keep the content pack identifiable and independently attributed. Never add restrictions that conflict with granted license rights. Consult the authoritative [CC BY-SA 4.0 deed](https://creativecommons.org/licenses/by-sa/4.0/) and [legal code](https://creativecommons.org/licenses/by-sa/4.0/legalcode), plus the exact publisher notice, when this candidate is evaluated.
 

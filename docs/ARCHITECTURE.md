@@ -21,7 +21,7 @@ flowchart TB
   Fixture[Normalized JSON fixture or authorized development pack]
   IDB[(IndexedDB development user records)]
   Backup[Validated portable user-data JSON]
-  Source[Authorized USFM archive + permission evidence]
+  Source[Authorized USX or USFM archive + license evidence]
   Pipeline[Offline import / validation / deterministic pack build]
   UI --> Services --> Ports
   Ports --> Browser

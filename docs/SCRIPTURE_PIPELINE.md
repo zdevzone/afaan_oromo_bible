@@ -13,9 +13,9 @@ The content owner approves the edition, intended audience/variety, canon, notice
 ## Ordered build stages
 
 1. **Register and acquire.** Record exact title, publisher, year/revision, language tag, variety, source URL, archive checksum, acquisition date, applicable license/evidence, expected book list and known numbering scheme. Download from the rights holder or authorized distributor. Preserve original bytes and filenames; unpack with path traversal, file-count and size limits.
-2. **Inspect source.** Detect declared encoding, USFM version and all marker/nesting patterns. Prefer supported UTF-8 source. Reject invalid encoding; do not silently replace characters. Compare actual books with the source's edition manifest. Document alternate labels, omissions and known publisher errata.
-3. **Parse into a source AST.** Use a verified structured USFM parser. Capture marker types, source locations, text, notes, paragraph/poetry structure and chapter/verse milestones. Collect parser diagnostics; unexpected errors stop the build.
-4. **Normalize structure, not wording.** Map parser nodes to the versioned chapter AST in [DATA_MODEL.md](DATA_MODEL.md). Preserve original text/code points. Document any semantic whitespace reconstruction required by USFM; retain source offset/provenance for comparison. Do not apply search normalization or editorial corrections to display text.
+2. **Inspect source.** Detect declared encoding, actual USX/USFM version and all element/marker/nesting patterns. Prefer supported UTF-8 source. Reject invalid encoding; do not silently replace characters. Compare actual books with the source's edition manifest. Document alternate labels, omissions and known publisher errata.
+3. **Parse into a source AST.** Use a verified parser for the supplied format. For USX, parse XML with mixed-text order and milestones preserved; reject DTDs/external entities. For USFM, use a structured USFM parser. Capture types, source locations, text, notes and paragraph/poetry structure. Collect diagnostics; unexpected errors stop the build.
+4. **Normalize structure, not wording.** Map parser nodes to the versioned chapter AST in [DATA_MODEL.md](DATA_MODEL.md). Preserve original text/code points. Document format-specific whitespace reconstruction; retain source offset/provenance for comparison. Do not apply search normalization or editorial corrections to display text.
 5. **Validate addresses and structure.** Build edition-scoped books, chapter order, units and label lookups. Validate uniqueness, ordering, valid ranges, bridge/subverse membership and note/reference associations. Unresolved external cross-references are reported and retained as source text; unparseable Scripture identity is a hard failure.
 6. **Project and index.** Derive exact plain body text, copy projection and normalized search text from the AST. Build SQLite tables and FTS5 in a temporary output file. Index body text only for V1's default search, with heading/note content kept distinct.
 7. **Audit equivalence.** Run automated text/structure comparisons and human sample review below. Validate database foreign keys, integrity and required FTS5 features. Produce a report covering all books and every source marker kind.
@@ -25,17 +25,36 @@ Build into a new directory. A failed import must never overwrite an approved con
 
 ## Parser decision spike
 
+Accept an authorized USX source directly; converting it to USFM first is unnecessary. The user-supplied OOCS 2024 candidate below makes USX 3.0 the next parser profile to evaluate. Implement only the selected source path; a USFM parser is needed only when an actual source requires it. No parser dependency has been selected or installed by the inspection.
+
 **Proposed evaluation candidates, not selected dependencies:** the structured parser packages in the [Bridgeconn USFM Grammar project](https://github.com/Bridgeconn/usfm-grammar) and the [unfoldingWord USFM JS project](https://github.com/unfoldingWord/usfm-js). Verify current repository ownership, maintained releases, package identity, license, USFM support and actual exported APIs before adding either. A build-time Python parser is acceptable only if its coverage materially wins and the extra toolchain is documented; TypeScript/JavaScript is preferable for a simple reproducible workflow when coverage is equivalent.
 
 The spike must parse the actual authorized source plus fixtures for nested notes, character markers, poetry, headings, bridges, subdivisions, alternate numbering, Unicode and malformed input. Verify that the parser exposes unknown markers and source text rather than quietly dropping them. Produce the marker coverage matrix, a parser choice and pinned version/lockfile. If no candidate meets the preservation contract, reduce the admitted source profile or fix upstream with reviewed changes; do not replace USFM parsing with regular expressions.
 
 Regex/string processing is acceptable for a small already-parsed reference grammar or marker inventory, never for parsing the full USFM language. Unknown markers or unsupported nesting are a production import error. A deliberately unsupported non-Scripture metadata marker may be admitted only through an explicit reviewed rule that retains its original data and reports the treatment.
 
+## Uploaded USX candidate — inspected 2026-10-21
+
+The supplied archive identifies **Biblica® Open Oromo Contemporary Scriptures 2024**, OOCS/local KQTAB, West Central Oromo (`gaz`), DBL ID `4d4cf8432222fef3`, metadata revision `1`. It is a distinct edition from the brief's 2022 candidate. The exact source/license record belongs to [CONTENT_LICENSING.md](CONTENT_LICENSING.md#uploaded-oocs-2024-candidate).
+
+All 66 USX 3.0 files decode as UTF-8 and parse as XML. The default publication's ordered book paths are complete. Structural checks find 1,189 matched chapter starts/ends, 31,102 matched verse-unit starts/ends and 17,955 valid continuation-paragraph `vid` attributes, without duplicate or overlapping milestones. Address coverage matches the supplied versification for those 66 books. This is an inspection result, not formal schema validation, imported-text equivalence, fluent review or production approval.
+
+The parser spike must cover these observed cases:
+
+- Preserve the `MAT 2:5-6` bridge as one unit with explicit lookup of both numeric addresses. There are 31,103 covered numeric labels; neither that count nor the verse-unit count is a universal Bible invariant.
+- Use the publication's `structure/content` order and metadata book names. ZIP order and the alphabetically listed `canonicalContent` are not the display order. The versification file contains 123 book-count entries and 257 mappings; those extra entries are not missing books in this 66-book publication.
+- Preserve all 43 paragraph styles and 10 character styles through an explicit mapping, including lists, headings, superscriptions, poetry and nested character spans. There are 342 nested character relationships and 460 optional breaks. Do not flatten unhandled structure silently; refine the current small fixture AST and its validators only for proven needs.
+- Preserve 478 footnotes, including two outside an active verse (EXO chapter 8 and PSA chapter 88), four `category="dup"` values and 1,071 character nodes marked `closed="false"`. Keep chapter-level/source positions rather than guessing verse anchors or deduplicating source notes.
+- Preserve 2,114 reference locations, including whole-chapter and cross-chapter ranges. The chapter-local user-note anchor is not a substitute for the complete Scripture-reference target.
+- The source text nodes are NFC and contain 36,842 U+02BC modifier-letter apostrophes, 1,510 U+2019 marks and no ASCII apostrophes. These counts include headings/notes. The current fixture search profile keeps U+02BC distinct; production equivalence with typed ASCII apostrophes needs an explicit reviewed decision and browser/native conformance tests. Display/copy text stays unchanged.
+
+The next concrete task is a USX parser spike against this observed profile and synthetic edge-case fixtures, followed by source-to-normalized text/structure comparison. The user reports downloading the archive from [Library.Bible's content catalog](https://app.library.bible/content); retain that acquisition record and the supplied notices, distinguishing it from an independently verified exact catalog-entry/revision match. No source text has been placed in the application, no production pack has been built, and the public-build gate remains intact.
+
 ## Source equivalence and approval
 
 Raw archive checksums prove provenance, not correct import. Verification must also establish:
 
-- Every source Scripture text run is represented exactly once and in source order; no verse or paragraph disappears. Parser-specific newline/whitespace interpretation is documented and tested against USFM semantics.
+- Every source Scripture text run is represented exactly once and in source order; no verse or paragraph disappears. Parser-specific newline/whitespace interpretation is documented and tested against the selected USX/USFM format semantics.
 - Flattened body text from source parsing and from the normalized AST agrees under the narrowly documented structural-whitespace policy. No case, apostrophe, spelling, diacritic or punctuation normalization is permitted for this comparison.
 - Verse labels, headings, poetry levels, note callers/bodies and cross-reference display strings agree with source inventories. Separate counts are reported; a single global character count is insufficient.
 - All expected books/chapters are present relative to this edition's source manifest. Apparent missing verse numbers and bridge counts are reviewed; never repair them using another translation's verse count.
@@ -93,4 +112,4 @@ Personal data is never bundled with a pack. Resolve existing anchors against rev
 - FTS5 availability, accepted query grammar, normalization and browser/native parity are tested with reviewed Oromo cases and synthetic edge cases.
 - A public build fails if it includes synthetic test Scripture, unapproved editions or unresolved hard validation errors. Development fixtures are visibly labeled **Synthetic test content — not Scripture**.
 
-Technical references to verify against pinned versions: [USFM specification](https://ubsicap.github.io/usfm/), [chapter/verse markers](https://ubsicap.github.io/usfm/chapters_verses/index.html), [SQLite FTS5](https://www.sqlite.org/fts5.html), [Unicode normalization](https://www.unicode.org/reports/tr15/). These links describe formats/tools; they do not grant content rights.
+Technical references to verify against pinned versions: [USX specification](https://ubsicap.github.io/usx/), [USFM specification](https://ubsicap.github.io/usfm/), [chapter/verse markers](https://ubsicap.github.io/usfm/chapters_verses/index.html), [SQLite FTS5](https://www.sqlite.org/fts5.html), [Unicode normalization](https://www.unicode.org/reports/tr15/). These links describe formats/tools; they do not grant content rights.

@@ -8,7 +8,7 @@ Project repository: [zdevzone/afaan_oromo_bible](https://github.com/zdevzone/afa
 
 All 17 requested development documents are established. Phase 1 source development has begun: a shared reader workspace, synthetic structured content, book/chapter and reference navigation, bounded search, whole-unit selection/copy, standalone and passage-linked plain notes, reading preferences, browser IndexedDB persistence, and narrow Tauri/Rust SQLite adapters.
 
-This is an **internal development scaffold**, not V1.0. Every included reading sentence is labeled **synthetic test content — not Scripture**. The initial Bible edition, its distribution rights, fluent Oromo wording, and purchased component source access are still verification gates. No AI, server, account, synchronization, rich editor, or sermon system is included.
+This is an **internal development scaffold**, not V1.0. Every included reading sentence is labeled **synthetic test content — not Scripture**. The uploaded Biblica® Open Oromo Contemporary Scriptures 2024 USX archive has passed structural inspection and contains a CC BY-SA 4.0 notice; its reported download source is Library.Bible. The [source assessment and checksum inventory](tools/scripture/inspection/oocs-2024/README.md) are preserved for local development. Exact catalog correspondence, intended-audience review, import equivalence, production content approval, fluent Oromo wording, and purchased component source access remain verification gates. No importer or production Scripture pack is implemented. No AI, server, account, synchronization, rich editor, or sermon system is included.
 
 The development environment now has **Vite+ 1.3.0**, **Node 24.19.0**, **pnpm 10.20.0**, and **Rust/Cargo 1.90.0**. Dependencies are installed, `pnpm-lock.yaml` and `src-tauri/Cargo.lock` were resolved by the actual tools, and Varlock generated `env.d.ts`. Toolchains and caches are session-local under ignored `.tooling/`; they are not part of the application source.
 
@@ -57,6 +57,18 @@ vp dev
 ```
 
 The foundation is currently on the branch above in [draft PR #1](https://github.com/zdevzone/afaan_oromo_bible/pull/1). After it merges, use the default branch. Open `http://127.0.0.1:1420`. Browser storage is development-only and may be cleared by the browser. Use the first sample reference shown in the reference entry field; search examples include `reading`, `"careful reading"`, `rea*`, and the Unicode fixtures documented under [scripture tooling](tools/scripture/README.md).
+
+For an existing local clone, commit or stash local edits, then run:
+
+```sh
+git fetch origin
+git switch codex/project-foundation
+git pull --ff-only origin codex/project-foundation
+vp install --frozen-lockfile
+vp dev
+```
+
+Local development needs Git, Vite+ and the pinned Node toolchain. Desktop development additionally needs Rust and the platform prerequisites below. The cloud-only `.tooling/session-env.sh`, installed dependencies, build outputs and local databases are not required repository inputs; install tools on your own machine. Keep your original `text-4d4cf8432222fef3-299488.zip` separately, or under ignored `content/sources/`, and verify it against the recorded SHA-256 before importer work. The uploaded archive, cloud test profiles and personal data are not included in the clone. Read [AGENTS.md](AGENTS.md) and the [current roadmap](docs/ROADMAP.md) when resuming implementation.
 
 In the current managed workspace, load the installed tools before running these commands:
 
@@ -118,5 +130,5 @@ Next, in order:
 
 1. Preserve the passing cross-platform build matrix. Repeat the passing Linux native slice and close guard in the proposed Ubuntu/GNOME target's Wayland and X11 sessions, including manual Orca review. Use the [Ubuntu container guide](tools/linux/README.md) for fast Linux build/smoke iteration here.
 2. Prepare Windows/macOS hosts, demonstrate their native loops and close decisions, and implement/test the separate macOS application-level quit paths. Keep Phase 1 open until those platform gates pass.
-3. Confirm the initial Afaan Oromo edition, authorized structured source, redistribution permissions and attribution. Provide the purchased Shadcnblocks source through an appropriate private resource and review its exact terms.
+3. Continue the [OOCS 2024 source assessment](tools/scripture/inspection/oocs-2024/README.md): retain the Library.Bible acquisition record and supplied notices, confirm the exact edition/audience and catalog correspondence, then evaluate a direct USX parser and verify source-to-normalized equivalence. Provide the purchased Shadcnblocks source through an appropriate private resource and review its exact terms.
 4. Proceed to Phase 2's full-corpus pipeline and remaining required V1 features in the [roadmap](docs/ROADMAP.md). AI and synchronization remain later work.

@@ -1,0 +1,1220 @@
+{
+  "inspection_date": "2026-10-21",
+  "status": "candidate_source_inspected_not_production_approved",
+  "archive": {
+    "filename": "text-4d4cf8432222fef3-299488.zip",
+    "bytes": 1950509,
+    "sha256": "ec543152e54faac1112e95ce74bc79ed2f20f26558edeef4b1b64fc96d608106",
+    "entries": 71,
+    "uncompressed_bytes": 8727156,
+    "original_download_url": "https://app.library.bible/content"
+  },
+  "edition": {
+    "title": "Biblica® Open Oromo Contemporary Scriptures 2024",
+    "local_title": "Biblica® Katabbiiwwan Qulqulluu, Turjumaana Ammayyaa Banamaa™",
+    "abbreviation": "OOCS",
+    "local_abbreviation": "KQTAB",
+    "completion_date": "2024-07-01",
+    "copyright": "Copyright © 2024 by Biblica, Inc.",
+    "language_tag": "gaz",
+    "language_name": "Oromo, West Central",
+    "script": "Latin",
+    "direction": "LTR",
+    "dbl_id": "4d4cf8432222fef3",
+    "metadata_revision": "1",
+    "metadata_version": "2.2.1",
+    "usx_version": "3.0"
+  },
+  "license": {
+    "notice": "CC BY-SA 4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "full_notice_path": "metadata.xml/promotion/promoVersionInfo",
+    "access_type": "open",
+    "license_date": "2025-08-03",
+    "publisher_source_match": "user_reported_library_bible_source_exact_catalog_revision_not_independently_verified",
+    "product_approval_recorded": false
+  },
+  "checks": {
+    "all_xml_utf8_parsed": true,
+    "all_usx_version_3_0": true,
+    "publication_file_codes_match": true,
+    "milestone_issues": [],
+    "complete_usx_schema_validation_performed": false,
+    "source_to_app_text_equivalence_performed": false,
+    "fluent_review_performed": false,
+    "included_book_versification_coverage_matches": true,
+    "all_usx_text_nodes_nfc": true,
+    "archive_sha256_still_matches": true
+  },
+  "totals": {
+    "books": 66,
+    "chapters": 1189,
+    "verse_units": 31102,
+    "continuation_paragraphs": 17955,
+    "footnotes": 478,
+    "references": 2114,
+    "covered_numeric_verse_labels": 31103
+  },
+  "tag_counts": {
+    "book": 66,
+    "chapter": 2378,
+    "char": 4338,
+    "note": 478,
+    "optbreak": 460,
+    "para": 41551,
+    "ref": 2114,
+    "usx": 66,
+    "verse": 62204
+  },
+  "style_counts": {
+    "book": {
+      "id": 66
+    },
+    "chapter": {
+      "c": 1189
+    },
+    "char": {
+      "fq": 81,
+      "fqa": 17,
+      "fr": 478,
+      "ft": 495,
+      "it": 2,
+      "nd": 2,
+      "rq": 1,
+      "tl": 51,
+      "wj": 2264,
+      "xt": 947
+    },
+    "note": {
+      "f": 478
+    },
+    "para": {
+      "b": 2717,
+      "cl": 150,
+      "d": 118,
+      "h": 66,
+      "lf": 138,
+      "lh": 145,
+      "li1": 1307,
+      "li2": 647,
+      "li3": 50,
+      "m": 164,
+      "mi": 1,
+      "mr": 21,
+      "ms": 5,
+      "ms1": 159,
+      "mt1": 66,
+      "mt2": 55,
+      "mt3": 6,
+      "nb": 10,
+      "p": 9195,
+      "pc": 12,
+      "pi1": 64,
+      "pm": 186,
+      "pmc": 1,
+      "pmo": 24,
+      "po": 5,
+      "pr": 12,
+      "q1": 10916,
+      "q2": 12352,
+      "q3": 5,
+      "qa": 22,
+      "qc": 8,
+      "qm1": 13,
+      "qm2": 15,
+      "qr": 28,
+      "r": 600,
+      "rem": 66,
+      "s1": 1895,
+      "s2": 72,
+      "s3": 2,
+      "sp": 35,
+      "toc1": 66,
+      "toc2": 66,
+      "toc3": 66
+    },
+    "verse": {
+      "v": 31102
+    }
+  },
+  "unicode_source_text_counts": {
+    "U+0027 APOSTROPHE": 0,
+    "U+2019 RIGHT SINGLE QUOTATION MARK": 1510,
+    "U+02BC MODIFIER LETTER APOSTROPHE": 36842,
+    "U+2018 LEFT SINGLE QUOTATION MARK": 1919,
+    "U+201C LEFT DOUBLE QUOTATION MARK": 8196,
+    "U+201D RIGHT DOUBLE QUOTATION MARK": 6223,
+    "U+FFFD REPLACEMENT CHARACTER": 0
+  },
+  "books_in_publication_order": [
+    {
+      "code": "GEN",
+      "path": "release/USX_1/GEN.usx",
+      "chapters": 50,
+      "verse_units": 1533,
+      "chapter_end_markers": 50,
+      "verse_end_markers": 1533,
+      "continuation_paragraphs": 308,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "EXO",
+      "path": "release/USX_1/EXO.usx",
+      "chapters": 40,
+      "verse_units": 1213,
+      "chapter_end_markers": 40,
+      "verse_end_markers": 1213,
+      "continuation_paragraphs": 132,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "LEV",
+      "path": "release/USX_1/LEV.usx",
+      "chapters": 27,
+      "verse_units": 859,
+      "chapter_end_markers": 27,
+      "verse_end_markers": 859,
+      "continuation_paragraphs": 16,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "NUM",
+      "path": "release/USX_1/NUM.usx",
+      "chapters": 36,
+      "verse_units": 1288,
+      "chapter_end_markers": 36,
+      "verse_end_markers": 1288,
+      "continuation_paragraphs": 248,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "DEU",
+      "path": "release/USX_1/DEU.usx",
+      "chapters": 34,
+      "verse_units": 959,
+      "chapter_end_markers": 34,
+      "verse_end_markers": 959,
+      "continuation_paragraphs": 199,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "JOS",
+      "path": "release/USX_1/JOS.usx",
+      "chapters": 24,
+      "verse_units": 658,
+      "chapter_end_markers": 24,
+      "verse_end_markers": 658,
+      "continuation_paragraphs": 77,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "JDG",
+      "path": "release/USX_1/JDG.usx",
+      "chapters": 21,
+      "verse_units": 618,
+      "chapter_end_markers": 21,
+      "verse_end_markers": 618,
+      "continuation_paragraphs": 124,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "RUT",
+      "path": "release/USX_1/RUT.usx",
+      "chapters": 4,
+      "verse_units": 85,
+      "chapter_end_markers": 4,
+      "verse_end_markers": 85,
+      "continuation_paragraphs": 14,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "1SA",
+      "path": "release/USX_1/1SA.usx",
+      "chapters": 31,
+      "verse_units": 810,
+      "chapter_end_markers": 31,
+      "verse_end_markers": 810,
+      "continuation_paragraphs": 112,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "2SA",
+      "path": "release/USX_1/2SA.usx",
+      "chapters": 24,
+      "verse_units": 695,
+      "chapter_end_markers": 24,
+      "verse_end_markers": 695,
+      "continuation_paragraphs": 199,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "1KI",
+      "path": "release/USX_1/1KI.usx",
+      "chapters": 22,
+      "verse_units": 816,
+      "chapter_end_markers": 22,
+      "verse_end_markers": 816,
+      "continuation_paragraphs": 72,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "2KI",
+      "path": "release/USX_1/2KI.usx",
+      "chapters": 25,
+      "verse_units": 719,
+      "chapter_end_markers": 25,
+      "verse_end_markers": 719,
+      "continuation_paragraphs": 118,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "1CH",
+      "path": "release/USX_1/1CH.usx",
+      "chapters": 29,
+      "verse_units": 942,
+      "chapter_end_markers": 29,
+      "verse_end_markers": 942,
+      "continuation_paragraphs": 491,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "2CH",
+      "path": "release/USX_1/2CH.usx",
+      "chapters": 36,
+      "verse_units": 822,
+      "chapter_end_markers": 36,
+      "verse_end_markers": 822,
+      "continuation_paragraphs": 70,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "EZR",
+      "path": "release/USX_1/EZR.usx",
+      "chapters": 10,
+      "verse_units": 280,
+      "chapter_end_markers": 10,
+      "verse_end_markers": 280,
+      "continuation_paragraphs": 80,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "NEH",
+      "path": "release/USX_1/NEH.usx",
+      "chapters": 13,
+      "verse_units": 406,
+      "chapter_end_markers": 13,
+      "verse_end_markers": 406,
+      "continuation_paragraphs": 72,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "EST",
+      "path": "release/USX_1/EST.usx",
+      "chapters": 10,
+      "verse_units": 167,
+      "chapter_end_markers": 10,
+      "verse_end_markers": 167,
+      "continuation_paragraphs": 10,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "JOB",
+      "path": "release/USX_1/JOB.usx",
+      "chapters": 42,
+      "verse_units": 1070,
+      "chapter_end_markers": 42,
+      "verse_end_markers": 1070,
+      "continuation_paragraphs": 1125,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "PSA",
+      "path": "release/USX_1/PSA.usx",
+      "chapters": 150,
+      "verse_units": 2461,
+      "chapter_end_markers": 150,
+      "verse_end_markers": 2461,
+      "continuation_paragraphs": 3347,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "PRO",
+      "path": "release/USX_1/PRO.usx",
+      "chapters": 31,
+      "verse_units": 915,
+      "chapter_end_markers": 31,
+      "verse_end_markers": 915,
+      "continuation_paragraphs": 989,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "ECC",
+      "path": "release/USX_1/ECC.usx",
+      "chapters": 12,
+      "verse_units": 222,
+      "chapter_end_markers": 12,
+      "verse_end_markers": 222,
+      "continuation_paragraphs": 275,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "SNG",
+      "path": "release/USX_1/SNG.usx",
+      "chapters": 8,
+      "verse_units": 117,
+      "chapter_end_markers": 8,
+      "verse_end_markers": 117,
+      "continuation_paragraphs": 287,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "ISA",
+      "path": "release/USX_1/ISA.usx",
+      "chapters": 66,
+      "verse_units": 1292,
+      "chapter_end_markers": 66,
+      "verse_end_markers": 1292,
+      "continuation_paragraphs": 3238,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "JER",
+      "path": "release/USX_1/JER.usx",
+      "chapters": 52,
+      "verse_units": 1364,
+      "chapter_end_markers": 52,
+      "verse_end_markers": 1364,
+      "continuation_paragraphs": 2059,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "LAM",
+      "path": "release/USX_1/LAM.usx",
+      "chapters": 5,
+      "verse_units": 154,
+      "chapter_end_markers": 5,
+      "verse_end_markers": 154,
+      "continuation_paragraphs": 382,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "EZK",
+      "path": "release/USX_1/EZK.usx",
+      "chapters": 48,
+      "verse_units": 1273,
+      "chapter_end_markers": 48,
+      "verse_end_markers": 1273,
+      "continuation_paragraphs": 534,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "DAN",
+      "path": "release/USX_1/DAN.usx",
+      "chapters": 12,
+      "verse_units": 357,
+      "chapter_end_markers": 12,
+      "verse_end_markers": 357,
+      "continuation_paragraphs": 55,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "HOS",
+      "path": "release/USX_1/HOS.usx",
+      "chapters": 14,
+      "verse_units": 197,
+      "chapter_end_markers": 14,
+      "verse_end_markers": 197,
+      "continuation_paragraphs": 523,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "JOL",
+      "path": "release/USX_1/JOL.usx",
+      "chapters": 3,
+      "verse_units": 73,
+      "chapter_end_markers": 3,
+      "verse_end_markers": 73,
+      "continuation_paragraphs": 219,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "AMO",
+      "path": "release/USX_1/AMO.usx",
+      "chapters": 9,
+      "verse_units": 146,
+      "chapter_end_markers": 9,
+      "verse_end_markers": 146,
+      "continuation_paragraphs": 373,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "OBA",
+      "path": "release/USX_1/OBA.usx",
+      "chapters": 1,
+      "verse_units": 21,
+      "chapter_end_markers": 1,
+      "verse_end_markers": 21,
+      "continuation_paragraphs": 71,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "JON",
+      "path": "release/USX_1/JON.usx",
+      "chapters": 4,
+      "verse_units": 48,
+      "chapter_end_markers": 4,
+      "verse_end_markers": 48,
+      "continuation_paragraphs": 26,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "MIC",
+      "path": "release/USX_1/MIC.usx",
+      "chapters": 7,
+      "verse_units": 105,
+      "chapter_end_markers": 7,
+      "verse_end_markers": 105,
+      "continuation_paragraphs": 324,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "NAM",
+      "path": "release/USX_1/NAM.usx",
+      "chapters": 3,
+      "verse_units": 47,
+      "chapter_end_markers": 3,
+      "verse_end_markers": 47,
+      "continuation_paragraphs": 146,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "HAB",
+      "path": "release/USX_1/HAB.usx",
+      "chapters": 3,
+      "verse_units": 56,
+      "chapter_end_markers": 3,
+      "verse_end_markers": 56,
+      "continuation_paragraphs": 139,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "ZEP",
+      "path": "release/USX_1/ZEP.usx",
+      "chapters": 3,
+      "verse_units": 53,
+      "chapter_end_markers": 3,
+      "verse_end_markers": 53,
+      "continuation_paragraphs": 190,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "HAG",
+      "path": "release/USX_1/HAG.usx",
+      "chapters": 2,
+      "verse_units": 38,
+      "chapter_end_markers": 2,
+      "verse_end_markers": 38,
+      "continuation_paragraphs": 3,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "ZEC",
+      "path": "release/USX_1/ZEC.usx",
+      "chapters": 14,
+      "verse_units": 211,
+      "chapter_end_markers": 14,
+      "verse_end_markers": 211,
+      "continuation_paragraphs": 128,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "MAL",
+      "path": "release/USX_1/MAL.usx",
+      "chapters": 4,
+      "verse_units": 55,
+      "chapter_end_markers": 4,
+      "verse_end_markers": 55,
+      "continuation_paragraphs": 15,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "MAT",
+      "path": "release/USX_1/MAT.usx",
+      "chapters": 28,
+      "verse_units": 1070,
+      "chapter_end_markers": 28,
+      "verse_end_markers": 1070,
+      "continuation_paragraphs": 158,
+      "non_integer_verse_labels": [
+        {
+          "chapter_id": "MAT 2",
+          "label": "5-6"
+        }
+      ]
+    },
+    {
+      "code": "MRK",
+      "path": "release/USX_1/MRK.usx",
+      "chapters": 16,
+      "verse_units": 678,
+      "chapter_end_markers": 16,
+      "verse_end_markers": 678,
+      "continuation_paragraphs": 77,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "LUK",
+      "path": "release/USX_1/LUK.usx",
+      "chapters": 24,
+      "verse_units": 1151,
+      "chapter_end_markers": 24,
+      "verse_end_markers": 1151,
+      "continuation_paragraphs": 151,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "JHN",
+      "path": "release/USX_1/JHN.usx",
+      "chapters": 21,
+      "verse_units": 879,
+      "chapter_end_markers": 21,
+      "verse_end_markers": 879,
+      "continuation_paragraphs": 80,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "ACT",
+      "path": "release/USX_1/ACT.usx",
+      "chapters": 28,
+      "verse_units": 1007,
+      "chapter_end_markers": 28,
+      "verse_end_markers": 1007,
+      "continuation_paragraphs": 110,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "ROM",
+      "path": "release/USX_1/ROM.usx",
+      "chapters": 16,
+      "verse_units": 433,
+      "chapter_end_markers": 16,
+      "verse_end_markers": 433,
+      "continuation_paragraphs": 96,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "1CO",
+      "path": "release/USX_1/1CO.usx",
+      "chapters": 16,
+      "verse_units": 437,
+      "chapter_end_markers": 16,
+      "verse_end_markers": 437,
+      "continuation_paragraphs": 26,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "2CO",
+      "path": "release/USX_1/2CO.usx",
+      "chapters": 13,
+      "verse_units": 257,
+      "chapter_end_markers": 13,
+      "verse_end_markers": 257,
+      "continuation_paragraphs": 22,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "GAL",
+      "path": "release/USX_1/GAL.usx",
+      "chapters": 6,
+      "verse_units": 149,
+      "chapter_end_markers": 6,
+      "verse_end_markers": 149,
+      "continuation_paragraphs": 8,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "EPH",
+      "path": "release/USX_1/EPH.usx",
+      "chapters": 6,
+      "verse_units": 155,
+      "chapter_end_markers": 6,
+      "verse_end_markers": 155,
+      "continuation_paragraphs": 9,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "PHP",
+      "path": "release/USX_1/PHP.usx",
+      "chapters": 4,
+      "verse_units": 104,
+      "chapter_end_markers": 4,
+      "verse_end_markers": 104,
+      "continuation_paragraphs": 12,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "COL",
+      "path": "release/USX_1/COL.usx",
+      "chapters": 4,
+      "verse_units": 95,
+      "chapter_end_markers": 4,
+      "verse_end_markers": 95,
+      "continuation_paragraphs": 2,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "1TH",
+      "path": "release/USX_1/1TH.usx",
+      "chapters": 5,
+      "verse_units": 89,
+      "chapter_end_markers": 5,
+      "verse_end_markers": 89,
+      "continuation_paragraphs": 5,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "2TH",
+      "path": "release/USX_1/2TH.usx",
+      "chapters": 3,
+      "verse_units": 47,
+      "chapter_end_markers": 3,
+      "verse_end_markers": 47,
+      "continuation_paragraphs": 2,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "1TI",
+      "path": "release/USX_1/1TI.usx",
+      "chapters": 6,
+      "verse_units": 113,
+      "chapter_end_markers": 6,
+      "verse_end_markers": 113,
+      "continuation_paragraphs": 13,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "2TI",
+      "path": "release/USX_1/2TI.usx",
+      "chapters": 4,
+      "verse_units": 83,
+      "chapter_end_markers": 4,
+      "verse_end_markers": 83,
+      "continuation_paragraphs": 11,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "TIT",
+      "path": "release/USX_1/TIT.usx",
+      "chapters": 3,
+      "verse_units": 46,
+      "chapter_end_markers": 3,
+      "verse_end_markers": 46,
+      "continuation_paragraphs": 5,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "PHM",
+      "path": "release/USX_1/PHM.usx",
+      "chapters": 1,
+      "verse_units": 25,
+      "chapter_end_markers": 1,
+      "verse_end_markers": 25,
+      "continuation_paragraphs": 2,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "HEB",
+      "path": "release/USX_1/HEB.usx",
+      "chapters": 13,
+      "verse_units": 303,
+      "chapter_end_markers": 13,
+      "verse_end_markers": 303,
+      "continuation_paragraphs": 110,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "JAS",
+      "path": "release/USX_1/JAS.usx",
+      "chapters": 5,
+      "verse_units": 108,
+      "chapter_end_markers": 5,
+      "verse_end_markers": 108,
+      "continuation_paragraphs": 8,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "1PE",
+      "path": "release/USX_1/1PE.usx",
+      "chapters": 5,
+      "verse_units": 105,
+      "chapter_end_markers": 5,
+      "verse_end_markers": 105,
+      "continuation_paragraphs": 29,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "2PE",
+      "path": "release/USX_1/2PE.usx",
+      "chapters": 3,
+      "verse_units": 61,
+      "chapter_end_markers": 3,
+      "verse_end_markers": 61,
+      "continuation_paragraphs": 6,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "1JN",
+      "path": "release/USX_1/1JN.usx",
+      "chapters": 5,
+      "verse_units": 105,
+      "chapter_end_markers": 5,
+      "verse_end_markers": 105,
+      "continuation_paragraphs": 12,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "2JN",
+      "path": "release/USX_1/2JN.usx",
+      "chapters": 1,
+      "verse_units": 13,
+      "chapter_end_markers": 1,
+      "verse_end_markers": 13,
+      "continuation_paragraphs": 2,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "3JN",
+      "path": "release/USX_1/3JN.usx",
+      "chapters": 1,
+      "verse_units": 15,
+      "chapter_end_markers": 1,
+      "verse_end_markers": 15,
+      "continuation_paragraphs": 3,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "JUD",
+      "path": "release/USX_1/JUD.usx",
+      "chapters": 1,
+      "verse_units": 25,
+      "chapter_end_markers": 1,
+      "verse_end_markers": 25,
+      "continuation_paragraphs": 1,
+      "non_integer_verse_labels": []
+    },
+    {
+      "code": "REV",
+      "path": "release/USX_1/REV.usx",
+      "chapters": 22,
+      "verse_units": 404,
+      "chapter_end_markers": 22,
+      "verse_end_markers": 404,
+      "continuation_paragraphs": 205,
+      "non_integer_verse_labels": []
+    }
+  ],
+  "file_inventory": [
+    {
+      "path": "text-4d4cf8432222fef3-299488/license.xml",
+      "bytes": 355,
+      "sha256": "b2d6d6dd98167c7a974707196dbee45c0eae867d9168733c37598ab03d3add74"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/1TH.usx",
+      "bytes": 20055,
+      "sha256": "05e36c510fbb85a81be019e58e3161497a3ee70f9618430c5765737ff3825842"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/2TH.usx",
+      "bytes": 11353,
+      "sha256": "e69a8be721216b6719def31111c04075226a40763bc81dd1d6b0bb17ebd5f259"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/1PE.usx",
+      "bytes": 28861,
+      "sha256": "bc6274b8c67ce32b4de9c266405d2954de3d6fa1bd220edc40cb9e5618279956"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/2CO.usx",
+      "bytes": 62313,
+      "sha256": "14e6a02119054944c270d1ea530441852fbd3fefdab3135651758a6e39bc2b6d"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/2JN.usx",
+      "bytes": 3651,
+      "sha256": "648ee92d42c1ca0c4a127d211daa07196a8cae1d49702b95c9591165dbc49bda"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/1TI.usx",
+      "bytes": 27479,
+      "sha256": "faac9f8d395977dd5f19af8c052e34f7a8e38e8382f472545a1196f0a1c9c686"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/2TI.usx",
+      "bytes": 19579,
+      "sha256": "60414526a03dccff420350ff58165a70498e535ffd6eba56f7264bcab7477f41"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/2CH.usx",
+      "bytes": 241165,
+      "sha256": "b30c553a1fc2dbd8419d4c18850bab0c2e8b570841aa296a21bb58105c798238"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/gaz.ldml",
+      "bytes": 4605,
+      "sha256": "c3266bf0609e070ab3b8d415d624c3d36c5b9bdcf2ad79732960d82dd9a4b0ff"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/3JN.usx",
+      "bytes": 4055,
+      "sha256": "5eda76e4edffe13a24a666dda2c747359a5614e063403abdbb0a3df86f82b24a"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/1KI.usx",
+      "bytes": 222416,
+      "sha256": "f3c65f98cbbf94022a80f1745e7b733260c3937c8c34d9dd45dbef5a2ffa1dce"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/styles.xml",
+      "bytes": 105668,
+      "sha256": "a8c73e3bc3bd44a139e5ea0ba417a1b5301a21a03a76f727003a7f1bc3ec7f77"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/1CH.usx",
+      "bytes": 244241,
+      "sha256": "5fe1902311e35fc345c240789d8583853830aedce62ada5c89e7679eec6ddcba"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/2PE.usx",
+      "bytes": 16630,
+      "sha256": "e7169db7534372e553d9696ff685faaacd1062029f7ed59557b2a500934b62d0"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/1JN.usx",
+      "bytes": 24899,
+      "sha256": "099c00b6aa1f3a36ef568db384f8245aefaa921219e227e375e915f7227267e5"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/COL.usx",
+      "bytes": 22142,
+      "sha256": "ed1d7fabbbae2ecd0cfffaad209ec723be4e16d062cd53a7b6fd6ab4fd82f135"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/AMO.usx",
+      "bytes": 56135,
+      "sha256": "f29f95f95e633c5e78c559b3ac16aa54781b3e27f7ff41c6a6b5edae2f2bb40b"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/EPH.usx",
+      "bytes": 33625,
+      "sha256": "cba29d69efec9f976b9a79c3fc316d1ab495dcbb5c4a1b6433d465bfa2ef1e22"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/1SA.usx",
+      "bytes": 216345,
+      "sha256": "d43a0d70066a8d4624016c589cefd9e716babb76ce1eb26a132371c0aa5b3a78"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/ACT.usx",
+      "bytes": 258646,
+      "sha256": "bb2cefceb71276147cd22f9b10df087456e9bf8ce63d7f7bb1c13331ade33e57"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/GAL.usx",
+      "bytes": 34553,
+      "sha256": "2ae70d8adb750b5ea69593a07761dcfc330f7e94a6b927fe749b6ab753616500"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/ECC.usx",
+      "bytes": 65183,
+      "sha256": "2629297d0595e24c74d9a211e19e9e3102805e90524d26278c581bc5bce009c5"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/metadata.xml",
+      "bytes": 35967,
+      "sha256": "1cbf7fb8f46518e28dad6bf1d934215fadc61e52c6fa2d43ad0f02fb6623c75c"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/2SA.usx",
+      "bytes": 194349,
+      "sha256": "2cbef6e03354bf4b765a42fd7565dfa39cac906e805a056b855efa58b903b77c"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/JAS.usx",
+      "bytes": 25169,
+      "sha256": "262511f99733ce96a2759b6d139c920266fa90c4cd45dc3f286e4fff2e6d5f46"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/2KI.usx",
+      "bytes": 214530,
+      "sha256": "1c695ae6f897f24778051e4cfbf7743c3d39dcc4f32698a5b588db73c87f5346"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/1CO.usx",
+      "bytes": 100258,
+      "sha256": "84d40d11ce9ed65f83504c3730225a77b8eeabc800b0e00583522b08334deb94"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/DAN.usx",
+      "bytes": 98665,
+      "sha256": "4e2570a681438079151ed32ed2d5592e68a0b2e83a2cadbf13588d164878e9e5"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/HAG.usx",
+      "bytes": 10796,
+      "sha256": "ccf2572a1855c61d826af560f9fe118fe3f037142db03cf7a8d2332fe1a23721"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/EST.usx",
+      "bytes": 49106,
+      "sha256": "4a0447c1708f0d992cb64bb0ea259f6bdcd623c777c2b4982fd4cf7251549685"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/GEN.usx",
+      "bytes": 368664,
+      "sha256": "afca189a796367e3a9b97278ce246c6a18ae10b619d8455e764a2dbf7f797b20"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/EZR.usx",
+      "bytes": 72434,
+      "sha256": "eb603a26127b5aab31ee57871273848785a57675f7e14dbe50e231f4aef446b8"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/HOS.usx",
+      "bytes": 75244,
+      "sha256": "775dd1ae18689a5633a3bce87872c3e60ca96bb46d0dc359c2a65a4b1e9c3bdf"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/HEB.usx",
+      "bytes": 82663,
+      "sha256": "06857e007582b9252e270f5fa84dcdd39d44079fecaa6fc2189c17630d8173b4"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/JON.usx",
+      "bytes": 13662,
+      "sha256": "bded2f80b827d5ece1fe56171842fc5b946ecf35da3adffbab4ed2e7dbdc5a5d"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/JER.usx",
+      "bytes": 462506,
+      "sha256": "c75238469d122a0506b9fdeb27999ceb6431950bd7916bed7e6e4ba6ab5e50bb"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/EXO.usx",
+      "bytes": 296980,
+      "sha256": "919e93c22dd071d93a694325cec815d6d307a51f1cf56be2d2ad9f00cb773e15"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/EZK.usx",
+      "bytes": 356905,
+      "sha256": "af55ad86736216d0607dcbcd57352cea0f29b93af8f441973220cd66afe0be70"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/JDG.usx",
+      "bytes": 163039,
+      "sha256": "e4c363b8a8a094262d297dfc498fbf08ce29c22afe8e901c317fb86792f4f7ce"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/HAB.usx",
+      "bytes": 21038,
+      "sha256": "abf511a381d458a320f75b982a5a8db06fc78ce2f4d74db0c9f2c99abb99aec4"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/DEU.usx",
+      "bytes": 242421,
+      "sha256": "a35c938855e95854666138ca50c47dcc6845cd774cf5b73ef9a220eb9b184bea"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/ISA.usx",
+      "bytes": 491881,
+      "sha256": "eca74b7f91ec05532d7a5eb682a1ba916dabd51c27d8ff2c46536b98774c2e16"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/JHN.usx",
+      "bytes": 215627,
+      "sha256": "21acc18f40666ff174dc4ea46e1af1815f39ca00a5a8fd68238ec27bb30456e2"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/MAL.usx",
+      "bytes": 17206,
+      "sha256": "ca4bc5b4a8617e663096d442d01dd6fecd7987c44fdc9c0ea1c79528d8595247"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/MIC.usx",
+      "bytes": 43143,
+      "sha256": "7baf492e14e0e2c2e1d83161b7c8da5d2a12d4b99d00e3436d7455706cc108b3"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/JOS.usx",
+      "bytes": 165033,
+      "sha256": "35f110f96bb441c08ff61859bac472a0cb1f56563f7b8a0cb7e486522f3202da"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/LEV.usx",
+      "bytes": 207976,
+      "sha256": "bad0d40b0644ff8def7f75c488bd7522902607ada8e5f1a52e570fee3fef4e76"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/JOB.usx",
+      "bytes": 266183,
+      "sha256": "fdc2bd1f847c8d65718728298ab82f09dbaa7eeb30a9e9e28cac5f9e80703fd2"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/JUD.usx",
+      "bytes": 9871,
+      "sha256": "b9b5bfadb05eb40deb1c24abf504015d3b4143f7ac8ea165727c563636918660"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/NAM.usx",
+      "bytes": 19317,
+      "sha256": "4d2d4a5f3f292d88df6114d32dcdd44cdf65c2374c77322ebce7bc0eda25df95"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/OBA.usx",
+      "bytes": 9329,
+      "sha256": "48e8069a75b5a66a0033b9ec4c1663b15e52a8edaf6cbdd68f74cdbf6390c8a7"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/PHM.usx",
+      "bytes": 5824,
+      "sha256": "9a618a86dca99b755a4723f61a383b2c8c061e5d5fca1b5475aae601f62f897b"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/JOL.usx",
+      "bytes": 29473,
+      "sha256": "d8ad4ac67d2da0d3907bb3c5f08c6f1cd8270e0cc77db8c30c1e0745ad9b4ce1"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/MAT.usx",
+      "bytes": 295958,
+      "sha256": "8984ed9c961de5d6fe767c9ffc7fe4b8fcca3187ee81bded1d3582c73f3ee040"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/PHP.usx",
+      "bytes": 24392,
+      "sha256": "2b789f51e010cacd7dda1769f7e008fc615187456713536dbae4b71a71ae6928"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/NUM.usx",
+      "bytes": 312272,
+      "sha256": "bc6ec6966a30d770ced303d1b845984360183d880bb7e67357039cdc128fe9e2"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/LUK.usx",
+      "bytes": 305215,
+      "sha256": "20c6d27c4a26137196cd17db285bee3d38681cda497f2df1a6db3bb17bfd3c16"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/NEH.usx",
+      "bytes": 102746,
+      "sha256": "89451d3fd4e9133333346ac886aa91ae063044c3cfc5b4fcbc8178a90819f5e5"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/LAM.usx",
+      "bytes": 54261,
+      "sha256": "08ab17ee268c17736b1aeef0db8a7aad43a79511809049012fdd3227a848add5"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/MRK.usx",
+      "bytes": 187961,
+      "sha256": "e1e4c226736205fbec89cdba145428fcb4c52c289764c8a9fb638f7cd2323b74"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/versification.vrs",
+      "bytes": 15409,
+      "sha256": "1ec19facbd73970468c390af744d23b07cdc7a7ce449f7e240fa9f89e905b24f"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/RUT.usx",
+      "bytes": 23852,
+      "sha256": "a4c2d44e0e426080c5d333775f9fdf76b31f3c5e6e9cbbee3fb547a991335d3c"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/PRO.usx",
+      "bytes": 236748,
+      "sha256": "b34b4668c4283327bd9d2fc8620adfa38570a862a1ea420bac08f08b90fb1e31"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/REV.usx",
+      "bytes": 133868,
+      "sha256": "aa34bf3d74b9152dfcabcfa43e7d4edb1dd55e61eb51afdb029e2f3e272dd669"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/ZEC.usx",
+      "bytes": 61138,
+      "sha256": "4b1f10f833553680cb0b8a89611ed5286c0f47d4674a78d4f1b98a7270b655bc"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/ZEP.usx",
+      "bytes": 23607,
+      "sha256": "e20be97dae7086bb9ef1f0f2a83cf6c48ff4c3e3e5102518526db6d68eec6e7a"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/ROM.usx",
+      "bytes": 110521,
+      "sha256": "981a82ce4763d9dcaa324631da86fc2d72675a6b1b7767c21fc4a7f789ce911b"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/TIT.usx",
+      "bytes": 11871,
+      "sha256": "f8523cf94419e484617776e77f752bd73ddc9c2f8596b13b6b858629fe2ae9f6"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/SNG.usx",
+      "bytes": 41685,
+      "sha256": "e077ecdc8fabd7fc1bbd5dbf8df9a855021267c4af0c518de4fbb290fc104bb9"
+    },
+    {
+      "path": "text-4d4cf8432222fef3-299488/release/USX_1/PSA.usx",
+      "bytes": 696439,
+      "sha256": "88ff6a09fd4610b976b695229749716bab407ecc92f4638e3c065d7b71f05791"
+    }
+  ],
+  "versification": {
+    "declared_book_count_entries": 123,
+    "mapping_lines": 257,
+    "publication_books_checked": 66,
+    "extra_versification_book_entries_are_not_missing_publication_books": true
+  },
+  "importer_edge_cases": {
+    "notes_outside_active_verse": [
+      {
+        "book": "EXO",
+        "chapter": "8",
+        "paragraph_style": "nb"
+      },
+      {
+        "book": "PSA",
+        "chapter": "88",
+        "paragraph_style": "d"
+      }
+    ],
+    "note_categories": {
+      "dup": 4
+    },
+    "character_nodes_closed_false": {
+      "fr": 478,
+      "fq": 81,
+      "ft": 495,
+      "fqa": 17
+    },
+    "nested_character_relationships": 342,
+    "optional_break_parent_counts": {
+      "para": 457,
+      "char": 3
+    },
+    "references_may_span_chapters": true
+  },
+  "provenance": {
+    "download_page_url": "https://app.library.bible/content",
+    "evidence": "user-reported original download source",
+    "reported_date": "2026-10-21",
+    "original_download_date": null,
+    "exact_catalog_revision_match": "not independently verified; exact catalog entry inaccessible during inspection",
+    "official_distribution_guidance": [
+      "https://care.library.bible/article/252-frequently-asked-questions",
+      "https://care.library.bible/article/158-content-license",
+      "https://care.library.bible/article/160-downloading-content-with-permission"
+    ]
+  }
+}
