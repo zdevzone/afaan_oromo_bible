@@ -4,9 +4,11 @@ import type { BookSummary, SearchResult, SearchResults } from "../../domain/scri
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { SelectField } from "../../components/ui/select";
+import type { UiCatalog } from "../../locales/en";
 
 export function SearchPanel({
   editionLabel,
+  languageTag,
   books,
   query,
   setQuery,
@@ -16,9 +18,12 @@ export function SearchPanel({
   error,
   results,
   onSubmit,
+  onLoadMore,
   onOpen,
+  strings,
 }: {
   editionLabel: string;
+  languageTag: string;
   books: BookSummary[];
   query: string;
   setQuery: (value: string) => void;
@@ -28,13 +33,15 @@ export function SearchPanel({
   error: string;
   results: SearchResults | null;
   onSubmit: (event: FormEvent) => void;
+  onLoadMore: () => void;
   onOpen: (result: SearchResult) => void;
+  strings: UiCatalog;
 }) {
   return (
     <div className="panel-body">
-      <p className="muted panel-intro">Find words and phrases in {editionLabel}.</p>
+      <p className="muted panel-intro">{strings.searchIntro.replace("{edition}", editionLabel)}</p>
       <form onSubmit={onSubmit} className="search-form">
-        <label htmlFor="scripture-query">Words or quoted phrase</label>
+        <label htmlFor="scripture-query">{strings.searchQueryLabel}</label>
         <div className="search-input">
           <Search size={17} aria-hidden="true" />
           <Input
@@ -42,21 +49,21 @@ export function SearchPanel({
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder='Try sample or "careful reading"'
+            placeholder={strings.searchPlaceholder}
             aria-invalid={!!error}
-            aria-describedby="search-help"
+            aria-describedby={error ? "search-help search-error" : "search-help"}
           />
         </div>
         <p id="search-help" className="field-help">
-          All words must match. Use quotes for a phrase or a trailing * for a prefix.
+          {strings.searchHelp}
         </p>
         <SelectField
           id="search-book"
-          label="Search in"
+          label={strings.searchIn}
           value={book}
           onValueChange={setBook}
           options={[
-            { value: "all", label: "All books" },
+            { value: "all", label: strings.allBooks },
             ...books.map((item) => ({ value: item.code, label: item.name })),
           ]}
         />
@@ -66,22 +73,23 @@ export function SearchPanel({
           ) : (
             <Search size={16} aria-hidden="true" />
           )}
-          Search Scripture
+          {strings.searchScripture}
         </Button>
       </form>
       {error && (
-        <p role="alert" className="error-box">
+        <p id="search-error" role="alert" className="error-box">
           {error}
         </p>
       )}
       {results && (
         <div className="search-results">
           <p className="sidebar-section-label">
-            {results.total} {results.total === 1 ? "RESULT" : "RESULTS"}
-            {results.hasMore ? " · FIRST 50" : ""}
+            {(results.total === 1 ? strings.resultSummarySingular : strings.resultSummaryPlural)
+              .replace("{total}", String(results.total))
+              .replace("{shown}", String(results.items.length))}
           </p>
           {results.items.length === 0 ? (
-            <p className="muted">No passages match this search. Try a different word or book.</p>
+            <p className="muted">{strings.noSearchResults}</p>
           ) : (
             <ol>
               {results.items.map((result) => (
@@ -91,17 +99,16 @@ export function SearchPanel({
                       {result.bookName} {result.chapterLabel}:{result.verseLabel}
                       <ArrowRight size={14} aria-hidden="true" />
                     </strong>
-                    <span>{result.textPlain}</span>
+                    <span lang={languageTag}>{result.textPlain}</span>
                   </button>
                 </li>
               ))}
             </ol>
           )}
           {results.hasMore && (
-            <p className="field-help">
-              This first development slice displays the first 50 results. Narrow your words or
-              choose a book.
-            </p>
+            <Button type="button" variant="outline" disabled={searching} onClick={onLoadMore}>
+              {searching ? strings.loadingMore : strings.loadMoreResults}
+            </Button>
           )}
         </div>
       )}

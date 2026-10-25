@@ -7,6 +7,7 @@ on:
       - ".env.schema"
       - ".node-version"
       - "*.json"
+      - "*.mjs"
       - "*.ts"
       - "pnpm-*.yaml"
       - "rust-toolchain.toml"
@@ -15,8 +16,7 @@ on:
       - "content/fixtures/**"
       - "public/**"
       - "tests/**"
-      - "tools/native.mjs"
-      - "tools/check-release.mjs"
+      - "tools/**"
   push:
     branches: [main]
     paths:
@@ -24,6 +24,7 @@ on:
       - ".env.schema"
       - ".node-version"
       - "*.json"
+      - "*.mjs"
       - "*.ts"
       - "pnpm-*.yaml"
       - "rust-toolchain.toml"
@@ -32,8 +33,7 @@ on:
       - "content/fixtures/**"
       - "public/**"
       - "tests/**"
-      - "tools/native.mjs"
-      - "tools/check-release.mjs"
+      - "tools/**"
   workflow_dispatch:
 
 permissions:
@@ -59,10 +59,18 @@ jobs:
           cache: true
           run-install: false
       - run: vp install --frozen-lockfile
+      - name: Test synthetic Scripture import and validation
+        run: python3 -m unittest discover -s tools/scripture -p 'test_*.py' -v
+      - name: Test content and UI release-gate contracts
+        run: node --test tools/check-public-assets.test.mjs tools/release/verify-capabilities.test.mjs tools/release/verify-content.test.mjs tools/release/verify-ui.test.mjs tools/release/verify-renderer.test.mjs
       - run: vp run typecheck
       - run: vp check
       - run: vp test
       - run: vp build
+      - name: Verify native renderer contains no fixture corpus or browser persistence
+        run: |
+          APP_TARGET=tauri vp build
+          node tools/release/verify-renderer.mjs
       - run: vp exec playwright install --with-deps chromium
       - run: vp run test:e2e
 
@@ -107,7 +115,7 @@ jobs:
         env:
           EXPECTED_ARCH: ${{ matrix.arch }}
         run: |
-          node -e "console.log(process.platform, process.arch); if (process.arch !== process.env.EXPECTED_ARCH) process.exit(1)"
+          node tools/record-native-host.mjs "$EXPECTED_ARCH"
           node --version
           vp --version
           rustc -vV
@@ -124,12 +132,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y \
             libwebkit2gtk-4.1-dev build-essential curl wget file \
-            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev \
+            xvfb xauth openbox dbus-x11 at-spi2-core \
+            python3 python3-gi gir1.2-atspi-2.0 xdotool xclip x11-utils scrot
       - name: Check Rust formatting
         if: runner.os == 'Linux'
         run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
-      - name: Test native SQLite repositories
+      - name: Test native storage and atomic backup publication
         run: cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --features development-content
+      - name: Test production profile without development fixtures
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features
       - name: Check headless Rust code
         if: runner.os == 'Linux'
         run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --features development-content --all-targets -- -D warnings
@@ -137,3 +149,82 @@ jobs:
         # Debug build, locked Cargo graph, synthetic content, no bundle/signing/upload.
         # This establishes compilation, not a GUI launch or OS qualification.
         run: vp run desktop:check
+      - name: Build the desktop app with the test-only embedded WebDriver
+        if: runner.os != 'Linux'
+        run: vp run desktop:native-test-build
+      - name: Exercise native shortcuts, reading, note-link lifecycle, and restart persistence
+        if: runner.os != 'Linux'
+        env:
+          TAURI_WEBDRIVER_PORT: "4445"
+        run: vp run test:native-ui
+      - name: Exercise the Ubuntu native window and crash restart
+        if: runner.os == 'Linux'
+        run: |
+          xvfb-run -a -s "-screen 0 1440x1000x24" dbus-run-session -- \
+            bash tools/linux/run-smoke.sh \
+              "$GITHUB_WORKSPACE/src-tauri/target/debug/afaan-oromo-bible" \
+              "$RUNNER_TEMP/aob-native-reader" crash
+      - name: Exercise native profile locking
+        if: runner.os == 'Linux'
+        run: |
+          xvfb-run -a -s "-screen 0 1440x1000x24" dbus-run-session -- \
+            bash tools/linux/run-profile-lock-smoke.sh \
+              "$GITHUB_WORKSPACE/src-tauri/target/debug/afaan-oromo-bible" \
+              "$RUNNER_TEMP/aob-native-lock"
+      - name: Exercise native corruption and clean-profile restore
+        if: runner.os == 'Linux'
+        run: |
+          xvfb-run -a -s "-screen 0 1440x1000x24" dbus-run-session -- \
+            bash tools/linux/run-corrupt-recovery-smoke.sh \
+              "$GITHUB_WORKSPACE/src-tauri/target/debug/afaan-oromo-bible" \
+              "$RUNNER_TEMP/qarree-ʼ-recovery"
+      - name: Exercise native full-record backup failure and retry
+        if: runner.os == 'Linux'
+        run: |
+          xvfb-run -a -s "-screen 0 1440x1000x24" dbus-run-session -- \
+            bash tools/linux/run-backup-smoke.sh \
+              "$GITHUB_WORKSPACE/src-tauri/target/debug/afaan-oromo-bible" \
+              "$RUNNER_TEMP/aob-native-backup-full" backup-full
+      - name: Build and exercise the installed internal Ubuntu package
+        if: runner.os == 'Linux'
+        env:
+          APP_TARGET: tauri
+        run: |
+          vp exec tauri build --debug --features development-content \
+            --config tools/linux/tauri.internal-test.conf.json -- --locked
+          package="$GITHUB_WORKSPACE/src-tauri/target/debug/bundle/deb/Afaan Oromo Bible_0.1.0_amd64.deb"
+          bash tools/linux/check-missing-dependencies.sh "$package"
+          sudo dpkg -i "$package"
+          sudo dpkg --audit
+          xvfb-run -a -s "-screen 0 1440x1000x24" dbus-run-session -- \
+            bash tools/linux/run-backup-smoke.sh \
+              /usr/bin/afaan-oromo-bible \
+              "$RUNNER_TEMP/aob-native-installed-backup" backup-full
+          sudo dpkg -r afaan-oromo-bible
+          test -f "$RUNNER_TEMP/aob-native-installed-backup/profile/data/org.afaanoromobible.reader/development/user.sqlite"
+          sudo dpkg -i "$package"
+          sudo dpkg --audit
+          python3 tools/linux/verify-backup-profile.py \
+            "$RUNNER_TEMP/aob-native-installed-backup/backup/native-export.json" \
+            "$RUNNER_TEMP/aob-native-installed-backup/profile/data/org.afaanoromobible.reader/development/user.sqlite"
+          xvfb-run -a -s "-screen 0 1440x1000x24" dbus-run-session -- \
+            bash tools/linux/run-installed-smoke.sh \
+              "$RUNNER_TEMP/aob-native-installed-backup" verify-existing
+      - name: Build the desktop app with the test-only embedded WebDriver
+        if: runner.os == 'Linux'
+        run: vp run desktop:native-test-build
+      - name: Exercise native keyboard shortcuts, reader, note links, and restarts
+        if: runner.os == 'Linux'
+        env:
+          APP_TARGET: tauri
+          GDK_BACKEND: x11
+          TAURI_WEBDRIVER_PORT: "4445"
+          WEBKIT_DISABLE_COMPOSITING_MODE: "1"
+          XDG_DATA_HOME: ${{ runner.temp }}/aob-native-wdio/data
+          XDG_CONFIG_HOME: ${{ runner.temp }}/aob-native-wdio/config
+          XDG_CACHE_HOME: ${{ runner.temp }}/aob-native-wdio/cache
+          XDG_RUNTIME_DIR: ${{ runner.temp }}/aob-native-wdio/runtime
+        run: |
+          mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_RUNTIME_DIR"
+          chmod 700 "$XDG_RUNTIME_DIR"
+          xvfb-run -a -s "-screen 0 1440x1000x24" dbus-run-session -- vp run test:native-ui

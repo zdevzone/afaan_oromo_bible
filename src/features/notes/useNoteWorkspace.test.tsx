@@ -33,6 +33,22 @@ function record(bodyText: string): Note {
 
 function userStore(overrides: Partial<UserStore> = {}): UserStore {
   return {
+    readSnapshot: async () => ({
+      notes: [],
+      bookmarks: [],
+      highlights: [],
+      preferences: [],
+      readingPositions: [],
+    }),
+    getDatabaseId: async () => "1ba9139d-41dd-4f2a-bd11-09738a9e4970",
+    readRecoveryBackup: async () => null,
+    replaceSnapshot: async () => "Browser development storage",
+    listBookmarks: async () => [],
+    saveBookmark: async (bookmark) => bookmark,
+    deleteBookmark: async () => {},
+    listHighlights: async () => [],
+    saveHighlights: async (highlights) => highlights,
+    deleteHighlights: async () => {},
     listNotes: async () => [],
     saveNote: async (note) => ({ ...note, revision: note.revision + 1 }),
     deleteNote: async () => {},
@@ -49,7 +65,11 @@ function services(store: UserStore): AppServices {
     userStore: store,
     library: createFixtureLibrary(),
     runtime: "browser",
-    platform: { copyText: async () => {} },
+    platform: {
+      copyText: async () => {},
+      saveBackup: async () => null,
+      openBackup: async () => null,
+    },
   };
 }
 
@@ -92,6 +112,33 @@ afterEach(() => {
 });
 
 describe("note editor persistence", () => {
+  it("keeps an oversize title draft without autosaving and resumes after correction", async () => {
+    const saveNote = vi.fn(async (note: Note) => ({ ...note, revision: note.revision + 1 }));
+    const appServices = services(userStore({ saveNote }));
+    const hook = renderHook(() => useNoteWorkspace(appServices));
+    await settle();
+    act(() => {
+      hook.result.current.create();
+      hook.result.current.edit({ title: "😀".repeat(257) });
+    });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(saveNote).not.toHaveBeenCalled();
+    expect(hook.result.current.status).toBe("error");
+    expect(hook.result.current.draft?.title).toBe("😀".repeat(257));
+
+    act(() => {
+      hook.result.current.edit({ title: "Within title limit", bodyText: "Within body limit" });
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    await settle();
+    expect(saveNote).toHaveBeenCalledTimes(1);
+    expect(hook.result.current.status).toBe("saved");
+  });
+
   it("checks the latest buffer and pauses edits and autosave until close is cancelled", async () => {
     const saveNote = vi.fn(async (note: Note) => ({ ...note, revision: note.revision + 1 }));
     const appServices = services(userStore({ saveNote }));

@@ -4,10 +4,16 @@ export interface Edition {
   title: string;
   abbreviation: string;
   languageTag: string;
+  languageName?: string;
   versificationId: string;
   contentRevision: string;
   canonId: string;
   isSynthetic: boolean;
+  technicalReviewOnly?: boolean;
+  sourceTitle?: string;
+  rightsHolderName?: string;
+  sourceCompletedOn?: string;
+  sourceArchiveSha256?: string;
   attribution: string;
   licenseNotice: string;
 }
@@ -33,6 +39,14 @@ export interface VerseAddress {
   verseLabel: string;
 }
 
+/** A source reference may name a whole chapter or a range spanning chapters. */
+export interface SourceReferenceTarget {
+  bookCode: string;
+  chapterLabel: string;
+  verseLabel?: string;
+  end?: { bookCode: string; chapterLabel: string; verseLabel?: string };
+}
+
 export interface VerseUnit {
   key: string;
   label: string;
@@ -41,22 +55,50 @@ export interface VerseUnit {
   textDigest: string;
 }
 
-export type InlineNode =
-  | { type: "text"; text: string }
-  | { type: "verse"; unitKey: string }
-  | { type: "footnote"; id: string; caller: string; text: string }
-  | {
-      type: "crossReference";
-      id: string;
-      caller: string;
-      text: string;
-      target: VerseAddress | null;
-    };
+export type SourceAttributes = [string, string][];
+export type SourcePath = number[];
 
-export type ContentBlock =
-  | { type: "heading"; text: string }
-  | { type: "paragraph"; children: InlineNode[] }
-  | { type: "poetry"; level: number; children: InlineNode[] };
+/** Exact source text and markers; display whitespace is handled by the renderer. */
+export type InlineNode =
+  | { kind: "text"; text: string; sourcePath?: SourcePath }
+  | {
+      kind: "verseStart";
+      unitKey: string;
+      sourcePath?: SourcePath;
+      sourceAttributes?: SourceAttributes;
+    }
+  | { kind: "verseEnd"; sourcePath?: SourcePath; sourceAttributes?: SourceAttributes }
+  | {
+      kind: "character";
+      style: string;
+      content?: InlineNode[];
+      sourcePath?: SourcePath;
+      sourceAttributes?: SourceAttributes;
+    }
+  | {
+      kind: "footnote";
+      content?: InlineNode[];
+      sourcePath?: SourcePath;
+      sourceAttributes?: SourceAttributes;
+    }
+  | {
+      kind: "reference";
+      content?: InlineNode[];
+      sourcePath?: SourcePath;
+      sourceAttributes?: SourceAttributes;
+      target?: SourceReferenceTarget | null;
+      displayMode?: "inline" | "callout";
+    }
+  | { kind: "optionalBreak"; sourcePath?: SourcePath };
+
+export interface ContentBlock {
+  kind: "block";
+  role: "metadata" | "heading" | "poetry" | "list" | "paragraph";
+  style: string;
+  content?: InlineNode[];
+  sourcePath?: SourcePath;
+  sourceAttributes?: SourceAttributes;
+}
 
 export interface ChapterContent extends ChapterKey {
   blocks: ContentBlock[];

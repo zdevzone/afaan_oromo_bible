@@ -50,77 +50,193 @@
       "chapterLabel": "1",
       "blocks": [
         {
-          "type": "heading",
-          "text": "Synthetic test content — not Scripture"
+          "kind": "block",
+          "role": "heading",
+          "style": "s1",
+          "content": [
+            {
+              "kind": "text",
+              "text": "Synthetic test content — not Scripture"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "children": [
+          "kind": "block",
+          "role": "paragraph",
+          "style": "p",
+          "content": [
             {
-              "type": "verse",
-              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"1\"]"
+              "kind": "verseStart",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"1\"]",
+              "sourceAttributes": [
+                [
+                  "number",
+                  "1"
+                ],
+                [
+                  "sid",
+                  "TSA 1:1"
+                ]
+              ]
             },
             {
-              "type": "text",
+              "kind": "text",
               "text": "Synthetic test sentence: careful reading keeps notes available offline."
             },
             {
-              "type": "footnote",
-              "id": "synthetic-note-1",
-              "caller": "a",
-              "text": "Synthetic footnote body for layout testing; not commentary."
+              "kind": "footnote",
+              "sourceAttributes": [
+                [
+                  "style",
+                  "f"
+                ],
+                [
+                  "caller",
+                  "a"
+                ]
+              ],
+              "content": [
+                {
+                  "kind": "text",
+                  "text": "Synthetic footnote body for layout testing; not commentary."
+                }
+              ]
             },
             {
-              "type": "crossReference",
-              "id": "synthetic-reference-1",
-              "caller": "b",
-              "text": "Sample Book B 1:1 (synthetic reference)",
+              "kind": "reference",
+              "displayMode": "callout",
+              "sourceAttributes": [
+                [
+                  "caller",
+                  "b"
+                ],
+                [
+                  "loc",
+                  "TSB 1:1"
+                ]
+              ],
               "target": {
                 "bookCode": "TSB",
                 "chapterLabel": "1",
                 "verseLabel": "1"
-              }
+              },
+              "content": [
+                {
+                  "kind": "text",
+                  "text": "Sample Book B 1:1 (synthetic reference)"
+                }
+              ]
+            },
+            {
+              "kind": "verseEnd",
+              "sourceAttributes": [
+                [
+                  "eid",
+                  "TSA 1:1"
+                ]
+              ]
             }
           ]
         },
         {
-          "type": "paragraph",
-          "children": [
+          "kind": "block",
+          "role": "paragraph",
+          "style": "p",
+          "content": [
             {
-              "type": "verse",
-              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"2-3\"]"
+              "kind": "verseStart",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"2-3\"]",
+              "sourceAttributes": [
+                [
+                  "number",
+                  "2-3"
+                ],
+                [
+                  "sid",
+                  "TSA 1:2-3"
+                ]
+              ]
             },
             {
-              "type": "text",
+              "kind": "text",
               "text": "Synthetic spelling fixture: WAaqaa ga’ee café aa bba."
+            },
+            {
+              "kind": "verseEnd",
+              "sourceAttributes": [
+                [
+                  "eid",
+                  "TSA 1:2-3"
+                ]
+              ]
             }
           ]
         },
         {
-          "type": "poetry",
-          "level": 1,
-          "children": [
+          "kind": "block",
+          "role": "poetry",
+          "style": "q1",
+          "content": [
             {
-              "type": "verse",
-              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"4a\"]"
+              "kind": "verseStart",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"4a\"]",
+              "sourceAttributes": [
+                [
+                  "number",
+                  "4a"
+                ],
+                [
+                  "sid",
+                  "TSA 1:4a"
+                ]
+              ]
             },
             {
-              "type": "text",
+              "kind": "text",
               "text": "Synthetic poetry line: careful reading."
+            },
+            {
+              "kind": "verseEnd",
+              "sourceAttributes": [
+                [
+                  "eid",
+                  "TSA 1:4a"
+                ]
+              ]
             }
           ]
         },
         {
-          "type": "poetry",
-          "level": 1,
-          "children": [
+          "kind": "block",
+          "role": "poetry",
+          "style": "q1",
+          "content": [
             {
-              "type": "verse",
-              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"4b\"]"
+              "kind": "verseStart",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"1\",\"4b\"]",
+              "sourceAttributes": [
+                [
+                  "number",
+                  "4b"
+                ],
+                [
+                  "sid",
+                  "TSA 1:4b"
+                ]
+              ]
             },
             {
-              "type": "text",
+              "kind": "text",
               "text": "Synthetic poetry line: notes remain local."
+            },
+            {
+              "kind": "verseEnd",
+              "sourceAttributes": [
+                [
+                  "eid",
+                  "TSA 1:4b"
+                ]
+              ]
             }
           ]
         }
@@ -186,32 +302,81 @@
       "chapterLabel": "2",
       "blocks": [
         {
-          "type": "heading",
-          "text": "Synthetic test content — not Scripture"
-        },
-        {
-          "type": "paragraph",
-          "children": [
+          "kind": "block",
+          "role": "heading",
+          "style": "s1",
+          "content": [
             {
-              "type": "verse",
-              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"2\",\"1\"]"
-            },
-            {
-              "type": "text",
-              "text": "Synthetic test sentence: a bookmark returns to this test chapter."
+              "kind": "text",
+              "text": "Synthetic test content — not Scripture"
             }
           ]
         },
         {
-          "type": "paragraph",
-          "children": [
+          "kind": "block",
+          "role": "paragraph",
+          "style": "p",
+          "content": [
             {
-              "type": "verse",
-              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"2\",\"2\"]"
+              "kind": "verseStart",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"2\",\"1\"]",
+              "sourceAttributes": [
+                [
+                  "number",
+                  "1"
+                ],
+                [
+                  "sid",
+                  "TSA 2:1"
+                ]
+              ]
             },
             {
-              "type": "text",
+              "kind": "text",
+              "text": "Synthetic test sentence: a bookmark returns to this test chapter."
+            },
+            {
+              "kind": "verseEnd",
+              "sourceAttributes": [
+                [
+                  "eid",
+                  "TSA 2:1"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "block",
+          "role": "paragraph",
+          "style": "p",
+          "content": [
+            {
+              "kind": "verseStart",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSA\",\"2\",\"2\"]",
+              "sourceAttributes": [
+                [
+                  "number",
+                  "2"
+                ],
+                [
+                  "sid",
+                  "TSA 2:2"
+                ]
+              ]
+            },
+            {
+              "kind": "text",
               "text": "Synthetic spelling fixture: gaʼee cafe a ba; these forms stay distinct."
+            },
+            {
+              "kind": "verseEnd",
+              "sourceAttributes": [
+                [
+                  "eid",
+                  "TSA 2:2"
+                ]
+              ]
             }
           ]
         }
@@ -247,32 +412,81 @@
       "chapterLabel": "1",
       "blocks": [
         {
-          "type": "heading",
-          "text": "Synthetic test content — not Scripture"
-        },
-        {
-          "type": "paragraph",
-          "children": [
+          "kind": "block",
+          "role": "heading",
+          "style": "s1",
+          "content": [
             {
-              "type": "verse",
-              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSB\",\"1\",\"1\"]"
-            },
-            {
-              "type": "text",
-              "text": "Synthetic test sentence: careful reading supports a reliable local draft."
+              "kind": "text",
+              "text": "Synthetic test content — not Scripture"
             }
           ]
         },
         {
-          "type": "paragraph",
-          "children": [
+          "kind": "block",
+          "role": "paragraph",
+          "style": "p",
+          "content": [
             {
-              "type": "verse",
-              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSB\",\"1\",\"2\"]"
+              "kind": "verseStart",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSB\",\"1\",\"1\"]",
+              "sourceAttributes": [
+                [
+                  "number",
+                  "1"
+                ],
+                [
+                  "sid",
+                  "TSB 1:1"
+                ]
+              ]
             },
             {
-              "type": "text",
+              "kind": "text",
+              "text": "Synthetic test sentence: careful reading supports a reliable local draft."
+            },
+            {
+              "kind": "verseEnd",
+              "sourceAttributes": [
+                [
+                  "eid",
+                  "TSB 1:1"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "block",
+          "role": "paragraph",
+          "style": "p",
+          "content": [
+            {
+              "kind": "verseStart",
+              "unitKey": "[\"synthetic-development\",\"synthetic-v1\",\"TSB\",\"1\",\"2\"]",
+              "sourceAttributes": [
+                [
+                  "number",
+                  "2"
+                ],
+                [
+                  "sid",
+                  "TSB 1:2"
+                ]
+              ]
+            },
+            {
+              "kind": "text",
               "text": "Synthetic test sentence: sample search results remain in source order."
+            },
+            {
+              "kind": "verseEnd",
+              "sourceAttributes": [
+                [
+                  "eid",
+                  "TSB 1:2"
+                ]
+              ]
             }
           ]
         }

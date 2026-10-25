@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppServices } from "../../domain/ports";
 import type { Note, VerseAnchor } from "../../domain/notes";
+import { getNoteSizeProblem } from "../../domain/notes";
 
 const fingerprint = (note: Note) => JSON.stringify([note.title, note.bodyText, note.anchor]);
 const message = (error: unknown) =>
@@ -88,6 +89,11 @@ export function useNoteWorkspace(services: AppServices) {
         if ((generations.current.get(requested.id) ?? 0) !== generation) return true;
         // Coalesce queued edits into the latest buffer rather than committing stale text.
         const snapshot = draftRef.current?.id === requested.id ? draftRef.current : requested;
+        if (getNoteSizeProblem(snapshot.title, snapshot.bodyText)) {
+          setError("The note exceeds the supported size. Your draft was not saved.");
+          setStatus("error");
+          return false;
+        }
         const saved = committed.current.get(snapshot.id);
         if (saved && fingerprint(saved) === fingerprint(snapshot)) return true;
         if (!saved && !snapshot.title.trim() && !snapshot.bodyText.trim()) return true;
@@ -150,6 +156,7 @@ export function useNoteWorkspace(services: AppServices) {
 
   useEffect(() => {
     if (!draft || deleting.current || closePaused) return;
+    if (getNoteSizeProblem(draft.title, draft.bodyText)) return;
     const saved = committed.current.get(draft.id);
     if (saved && fingerprint(saved) === fingerprint(draft)) return;
     if (!saved && !draft.title.trim() && !draft.bodyText.trim()) return;
@@ -165,10 +172,27 @@ export function useNoteWorkspace(services: AppServices) {
     };
   }, [draft, save, closePaused]);
 
-  const edit = (patch: Partial<Pick<Note, "title" | "bodyText" | "anchor">>) => {
-    if (!draftRef.current || closePausedRef.current || deleting.current) return;
-    updateDraft({ ...draftRef.current, ...patch });
-    setStatus("unsaved");
+  const edit = (
+    patch: Partial<Pick<Note, "title" | "bodyText" | "anchor">>,
+    expectedId?: string,
+  ): boolean => {
+    if (
+      !draftRef.current ||
+      (expectedId !== undefined && draftRef.current.id !== expectedId) ||
+      closePausedRef.current ||
+      deleting.current
+    )
+      return false;
+    const updated = { ...draftRef.current, ...patch };
+    updateDraft(updated);
+    if (getNoteSizeProblem(updated.title, updated.bodyText)) {
+      setError("The note exceeds the supported size. Your draft was not saved.");
+      setStatus("error");
+    } else {
+      setError("");
+      setStatus("unsaved");
+    }
+    return true;
   };
 
   const open = (note: Note) => {

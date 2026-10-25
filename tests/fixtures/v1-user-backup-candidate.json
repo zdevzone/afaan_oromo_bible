@@ -1,0 +1,106 @@
+{
+  "format": "afaan-oromo-bible-user-backup",
+  "formatVersion": 1,
+  "appVersion": "1.0.0",
+  "createdAt": "2026-10-25T12:00:00.000Z",
+  "sourceDatabaseId": "123e4567-e89b-42d3-a456-426614174000",
+  "requiredEditions": [
+    {
+      "editionId": "synthetic-fixture-edition",
+      "versificationId": "synthetic-fixture-v1",
+      "contentRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  ],
+  "data": {
+    "notes": [
+      {
+        "id": "123e4567-e89b-42d3-a456-426614174001",
+        "title": "Synthetic linked note — ʼ",
+        "bodyText": "Synthetic private note with modifier apostrophe ʼ and emoji 📖. No Scripture text.",
+        "createdAt": "2026-10-25T11:00:00.000Z",
+        "updatedAt": "2026-10-25T11:30:00.000Z",
+        "revision": 3,
+        "anchorId": "123e4567-e89b-42d3-a456-426614174010"
+      },
+      {
+        "id": "123e4567-e89b-42d3-a456-426614174002",
+        "title": "Synthetic standalone note",
+        "bodyText": "Synthetic personal text without a passage link.",
+        "createdAt": "2026-10-25T11:05:00.000Z",
+        "updatedAt": "2026-10-25T11:35:00.000Z",
+        "revision": 1,
+        "anchorId": null
+      }
+    ],
+    "anchors": [
+      {
+        "id": "123e4567-e89b-42d3-a456-426614174010",
+        "editionId": "synthetic-fixture-edition",
+        "versificationId": "synthetic-fixture-v1",
+        "contentRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "start": { "bookCode": "TSA", "chapterLabel": "1", "verseLabel": "2" },
+        "end": { "bookCode": "TSA", "chapterLabel": "1", "verseLabel": "3" },
+        "unitKeys": [
+          "[\"synthetic-fixture-edition\",\"synthetic-fixture-v1\",\"TSA\",\"1\",\"2\"]",
+          "[\"synthetic-fixture-edition\",\"synthetic-fixture-v1\",\"TSA\",\"1\",\"3\"]"
+        ],
+        "selectedTextDigests": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        ],
+        "displayReferenceSnapshot": "Sample Book A 1:2-3",
+        "createdAt": "2026-10-25T11:00:00.000Z"
+      },
+      {
+        "id": "123e4567-e89b-42d3-a456-426614174011",
+        "editionId": "synthetic-fixture-edition",
+        "versificationId": "synthetic-fixture-v1",
+        "contentRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "start": { "bookCode": "TSA", "chapterLabel": "1", "verseLabel": "4" },
+        "end": { "bookCode": "TSA", "chapterLabel": "1", "verseLabel": "4" },
+        "unitKeys": [
+          "[\"synthetic-fixture-edition\",\"synthetic-fixture-v1\",\"TSA\",\"1\",\"4\"]"
+        ],
+        "selectedTextDigests": ["dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"],
+        "displayReferenceSnapshot": "Sample Book A 1:4",
+        "createdAt": "2026-10-25T11:10:00.000Z"
+      }
+    ],
+    "bookmarks": [
+      {
+        "id": "123e4567-e89b-42d3-a456-426614174003",
+        "label": "Synthetic range bookmark",
+        "createdAt": "2026-10-25T11:15:00.000Z",
+        "updatedAt": "2026-10-25T11:15:00.000Z",
+        "anchorId": "123e4567-e89b-42d3-a456-426614174010"
+      }
+    ],
+    "highlights": [
+      {
+        "id": "123e4567-e89b-42d3-a456-426614174004",
+        "colorToken": "rose",
+        "createdAt": "2026-10-25T11:20:00.000Z",
+        "updatedAt": "2026-10-25T11:20:00.000Z",
+        "anchorId": "123e4567-e89b-42d3-a456-426614174011"
+      }
+    ],
+    "preferences": [
+      {
+        "uiLocale": "en",
+        "theme": "system",
+        "fontSizePx": 20,
+        "lineHeight": 1.65,
+        "width": "comfortable"
+      }
+    ],
+    "readingPositions": [
+      {
+        "editionId": "synthetic-fixture-edition",
+        "bookCode": "TSA",
+        "chapterLabel": "1",
+        "verseLabel": "2-3",
+        "updatedAt": "2026-10-25T11:40:00.000Z"
+      }
+    ]
+  }
+}

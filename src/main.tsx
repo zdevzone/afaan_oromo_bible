@@ -4,6 +4,8 @@ import { App } from "./app/App";
 import { createServices } from "./app/createServices";
 import "./styles/globals.css";
 
+if (__WDIO_TEST__) await import("@wdio/tauri-plugin");
+
 const container = document.getElementById("root");
 if (!container) throw new Error("The application root is missing.");
 const root = createRoot(container);

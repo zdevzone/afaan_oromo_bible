@@ -25,6 +25,25 @@ export interface Note {
   revision: number;
 }
 
+export interface Bookmark {
+  id: string;
+  anchor: VerseAnchor;
+  label: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const HIGHLIGHT_COLORS = ["yellow", "green", "blue", "rose"] as const;
+export type HighlightColor = (typeof HIGHLIGHT_COLORS)[number];
+
+export interface Highlight {
+  id: string;
+  anchor: VerseAnchor;
+  colorToken: HighlightColor;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ReadingPosition {
   editionId: string;
   bookCode: string;
@@ -34,6 +53,7 @@ export interface ReadingPosition {
 }
 
 export interface Preferences {
+  uiLocale: "en" | "om";
   theme: "light" | "dark" | "system";
   fontSizePx: number;
   lineHeight: 1.4 | 1.65 | 1.9;
@@ -41,6 +61,7 @@ export interface Preferences {
 }
 
 export const DEFAULT_PREFERENCES: Readonly<Preferences> = {
+  uiLocale: "en",
   theme: "system",
   fontSizePx: 20,
   lineHeight: 1.65,
@@ -137,14 +158,18 @@ export function validateAnchor(value: unknown): asserts value is VerseAnchor {
 }
 
 export function validateNote(value: unknown): asserts value is Note {
+  const noteSizeProblem =
+    isRecord(value) && typeof value.title === "string" && typeof value.bodyText === "string"
+      ? getNoteSizeProblem(value.title, value.bodyText)
+      : null;
   if (
     !isRecord(value) ||
     typeof value.id !== "string" ||
     !UUID.test(value.id) ||
     typeof value.title !== "string" ||
-    Array.from(value.title).length > 256 ||
+    noteSizeProblem === "title" ||
     typeof value.bodyText !== "string" ||
-    new TextEncoder().encode(value.bodyText).byteLength > 1024 * 1024 ||
+    noteSizeProblem === "body" ||
     !isUtcTimestamp(value.createdAt) ||
     !isUtcTimestamp(value.updatedAt) ||
     Date.parse(value.updatedAt) < Date.parse(value.createdAt) ||
@@ -157,9 +182,67 @@ export function validateNote(value: unknown): asserts value is Note {
   if (value.anchor !== null) validateAnchor(value.anchor);
 }
 
+export function getNoteSizeProblem(title: string, bodyText: string): "title" | "body" | null {
+  if (Array.from(title).length > 256) return "title";
+  if (new TextEncoder().encode(bodyText).byteLength > 1024 * 1024) return "body";
+  return null;
+}
+
+export function validateBookmark(value: unknown): asserts value is Bookmark {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    !UUID.test(value.id) ||
+    typeof value.label !== "string" ||
+    Array.from(value.label).length > 256 ||
+    !isUtcTimestamp(value.createdAt) ||
+    !isUtcTimestamp(value.updatedAt) ||
+    Date.parse(value.updatedAt) < Date.parse(value.createdAt)
+  ) {
+    fail("The bookmark is invalid or its label is too long.");
+  }
+  validateAnchor(value.anchor);
+}
+
+export function validateHighlight(value: unknown): asserts value is Highlight {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    !UUID.test(value.id) ||
+    !HIGHLIGHT_COLORS.includes(value.colorToken as HighlightColor) ||
+    !isUtcTimestamp(value.createdAt) ||
+    !isUtcTimestamp(value.updatedAt) ||
+    Date.parse(value.updatedAt) < Date.parse(value.createdAt)
+  )
+    fail("The highlight or its color is invalid.");
+  validateAnchor(value.anchor);
+  if (value.anchor.unitKeys.length !== 1)
+    fail("A highlight must cover exactly one whole verse unit.");
+}
+
+/** The selected source units identify a bookmark independently of display wording. */
+export function bookmarkIdentity(anchor: VerseAnchor): string {
+  validateAnchor(anchor);
+  return JSON.stringify([anchor.editionId, anchor.versificationId, anchor.unitKeys]);
+}
+
+export function resolvedHighlightColors(
+  highlights: readonly Highlight[],
+  edition: Edition | null,
+  chapter: ChapterContent | null,
+): Record<string, HighlightColor> {
+  if (!edition || !chapter) return {};
+  return Object.fromEntries(
+    highlights
+      .filter((item) => anchorMatchesChapter(item.anchor, edition, chapter))
+      .map((item) => [item.anchor.unitKeys[0]!, item.colorToken]),
+  );
+}
+
 export function validatePreferences(value: unknown): asserts value is Preferences {
   if (
     !isRecord(value) ||
+    !["en", "om"].includes(String(value.uiLocale)) ||
     !["light", "dark", "system"].includes(String(value.theme)) ||
     typeof value.fontSizePx !== "number" ||
     !Number.isFinite(value.fontSizePx) ||
@@ -228,4 +311,44 @@ export function createVerseAnchor(
   };
   validateAnchor(anchor);
   return anchor;
+}
+
+/** Match an old link only when its address, unit order and wording still agree. */
+export function anchorMatchesContent(
+  anchor: VerseAnchor,
+  edition: Edition,
+  chapter: ChapterContent,
+): boolean {
+  if (
+    anchor.editionId !== edition.id ||
+    anchor.versificationId !== edition.versificationId ||
+    chapter.editionId !== edition.id ||
+    chapter.bookCode !== anchor.start.bookCode ||
+    chapter.chapterLabel !== anchor.start.chapterLabel
+  )
+    return false;
+  const selected = chapter.verseUnits.filter((unit) => anchor.unitKeys.includes(unit.key));
+  return (
+    selected.length === anchor.unitKeys.length &&
+    selected[0]?.label === anchor.start.verseLabel &&
+    selected.at(-1)?.label === anchor.end.verseLabel &&
+    selected.every(
+      (unit, index) =>
+        unit.key === anchor.unitKeys[index] &&
+        unit.textDigest === anchor.selectedTextDigests[index] &&
+        unit.order === selected[0]!.order + index,
+    )
+  );
+}
+
+/** A saved highlight is displayed only for the content revision it names. */
+export function anchorMatchesChapter(
+  anchor: VerseAnchor,
+  edition: Edition,
+  chapter: ChapterContent,
+): boolean {
+  return (
+    anchor.contentRevision === edition.contentRevision &&
+    anchorMatchesContent(anchor, edition, chapter)
+  );
 }

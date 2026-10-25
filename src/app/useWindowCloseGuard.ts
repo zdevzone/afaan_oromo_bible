@@ -84,6 +84,7 @@ export function useWindowCloseGuard(
       if (activeRef.current) latest.current.notes.resumeAfterClose();
       activeRef.current = false;
       busyRef.current = false;
+      window.resetCloseRequest();
     };
   }, [window]);
 
@@ -95,6 +96,7 @@ export function useWindowCloseGuard(
     setOpen(false);
     setError("");
     latest.current.notes.resumeAfterClose();
+    window?.resetCloseRequest();
   }
 
   return {

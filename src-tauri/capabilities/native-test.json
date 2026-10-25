@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "native-test",
+  "description": "Embedded WebDriver access for native UI tests only.",
+  "windows": ["main"],
+  "permissions": ["wdio-webdriver:default", "wdio:default"]
+}

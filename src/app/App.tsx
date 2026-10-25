@@ -1,6 +1,7 @@
 import {
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -9,12 +10,14 @@ import {
 import {
   ArrowLeft,
   ArrowRight,
+  Bookmark as BookmarkIcon,
   BookOpen,
   ChevronLeft,
   ChevronRight,
   Copy,
   Feather,
   FileText,
+  Info,
   Leaf,
   List,
   LoaderCircle,
@@ -31,12 +34,28 @@ import type {
   ChapterContent,
   ChapterKey,
   Edition,
+  ParsedSearch,
   SearchResults,
+  SourceReferenceTarget,
 } from "../domain/scripture";
-import { createVerseAnchor, DEFAULT_PREFERENCES, type Preferences } from "../domain/notes";
+import { AppError } from "../domain/scripture";
+import {
+  createVerseAnchor,
+  anchorMatchesChapter,
+  anchorMatchesContent,
+  resolvedHighlightColors,
+  DEFAULT_PREFERENCES,
+  type Bookmark,
+  type Highlight,
+  type HighlightColor,
+  type Preferences,
+  type VerseAnchor,
+} from "../domain/notes";
 import { parseSearchQuery } from "../services/search";
+import { resolveSourceTarget } from "../services/reference";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
 import { SelectField } from "../components/ui/select";
 import {
   Dialog,
@@ -49,11 +68,13 @@ import { ReaderContent } from "../features/reader/ReaderContent";
 import { useNoteWorkspace } from "../features/notes/useNoteWorkspace";
 import { NotesPanel, noteTitle } from "../features/notes/NotesPanel";
 import { SearchPanel } from "../features/reader/SearchPanel";
+import { BookmarksPanel } from "../features/reader/BookmarksPanel";
+import { BackupControls } from "../features/backup/BackupControls";
+import { AboutDialog } from "../features/about/AboutDialog";
 import { en } from "../locales/en";
+import { activeUiLanguage, catalogFor, oromoCatalogComplete } from "../locales/catalog";
+import { messageForError } from "../locales/errors";
 import { useWindowCloseGuard } from "./useWindowCloseGuard";
-
-const errorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : "Something could not be completed. Please try again.";
 
 export function App({ services }: { services: AppServices }) {
   const notes = useNoteWorkspace(services);
@@ -61,14 +82,51 @@ export function App({ services }: { services: AppServices }) {
   const [books, setBooks] = useState<BookSummary[]>([]);
   const [chapter, setChapter] = useState<ChapterContent | null>(null);
   const [preferences, setPreferences] = useState<Preferences>({ ...DEFAULT_PREFERENCES });
+  const strings = useMemo(() => catalogFor(preferences.uiLocale), [preferences.uiLocale]);
+  const stringsRef = useRef(strings);
+  useEffect(() => {
+    stringsRef.current = strings;
+  }, [strings]);
+  useEffect(() => {
+    const previous = document.documentElement.lang;
+    document.documentElement.lang = activeUiLanguage(preferences.uiLocale);
+    return () => {
+      document.documentElement.lang = previous;
+    };
+  }, [preferences.uiLocale]);
+  const errorMessage = (error: unknown) => messageForError(error, stringsRef.current);
+  const [preferencesReady, setPreferencesReady] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [bootError, setBootError] = useState("");
+  const [bootError, setBootError] = useState<{ code: string; message: string } | null>(null);
+  const [recoveryConfirmOpen, setRecoveryConfirmOpen] = useState(false);
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
+  const [recoveryError, setRecoveryError] = useState("");
+  const [recoveryLocation, setRecoveryLocation] = useState<string | null>(null);
   const [bootAttempt, setBootAttempt] = useState(0);
+  const [positionObserverRevision, setPositionObserverRevision] = useState(0);
   const [notice, setNotice] = useState("");
+  const [failedCopy, setFailedCopy] = useState<{ text: string; error: string } | null>(null);
   const [announcement, setAnnouncement] = useState("");
-  const [panel, setPanel] = useState<"search" | "notes" | null>(null);
+  const [panel, setPanel] = useState<"search" | "notes" | "bookmarks" | null>(null);
+  const [singlePane, setSinglePane] = useState(
+    () => window.matchMedia("(max-width: 1099px)").matches,
+  );
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 1099px)");
+    const update = () => setSinglePane(query.matches);
+    query.addEventListener("change", update);
+    update();
+    return () => query.removeEventListener("change", update);
+  }, []);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [highlightBusy, setHighlightBusy] = useState(false);
+  const [bookmarkBusy, setBookmarkBusy] = useState(false);
+  const [bookmarkError, setBookmarkError] = useState("");
+  const [deleteBookmarkTarget, setDeleteBookmarkTarget] = useState<Bookmark | null>(null);
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [extendSelection, setExtendSelection] = useState(false);
   const [referenceInput, setReferenceInput] = useState("");
@@ -80,13 +138,21 @@ export function App({ services }: { services: AppServices }) {
   const [searchError, setSearchError] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
   const [guardBusy, setGuardBusy] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const requestId = useRef(0);
   const navigationIntent = useRef(0);
   const searchId = useRef(0);
+  const submittedSearch = useRef<{
+    editionId: string;
+    query: ParsedSearch;
+    bookCode?: string;
+  } | null>(null);
   const positionQueue = useRef(Promise.resolve());
+  const flushPendingPosition = useRef<(() => void) | null>(null);
   const preferenceQueue = useRef(Promise.resolve());
+  const userWritesPaused = useRef(false);
   const closeGuard = useWindowCloseGuard(services.platform.window, notes, async () => {
     // Wait for already queued position/preferences transactions. Their failure
     // notices are separate from note durability; Discard never deletes records.
@@ -102,6 +168,7 @@ export function App({ services }: { services: AppServices }) {
   const passageRef = useRef<HTMLElement>(null);
   const activeBook = books.find((book) => book.code === chapter?.bookCode);
   const selectedUnits = chapter?.verseUnits.filter((unit) => selectedKeys.includes(unit.key)) ?? [];
+  const highlightColors = resolvedHighlightColors(highlights, edition, chapter);
   const selectedReference =
     chapter && activeBook && selectedUnits.length
       ? `${activeBook.name} ${chapter.chapterLabel}:${selectedUnits[0]!.label}${selectedUnits.length > 1 ? `–${selectedUnits[selectedUnits.length - 1]!.label}` : ""}`
@@ -111,18 +178,22 @@ export function App({ services }: { services: AppServices }) {
     let active = true;
     async function load() {
       setLoading(true);
-      setBootError("");
+      setBootError(null);
+      setPreferencesReady(false);
       try {
+        const preferenceResult = await services.userStore.getPreferences().then(
+          (value) => ({ value, error: "" }),
+          (cause) => ({ value: { ...DEFAULT_PREFERENCES }, error: errorMessage(cause) }),
+        );
+        if (!active) return;
+        setPreferences(preferenceResult.value);
+        setPreferencesReady(true);
+        const loadedStrings = catalogFor(preferenceResult.value.uiLocale);
         const editions = await services.library.listEditions();
         const first = editions[0];
-        if (!first)
-          throw new Error("No content is installed. Add an approved content pack before reading.");
-        const [bookList, preferenceResult, positionResult] = await Promise.all([
+        if (!first) throw new Error(loadedStrings.noContentInstalled);
+        const [bookList, positionResult] = await Promise.all([
           services.library.listBooks(first.id),
-          services.userStore.getPreferences().then(
-            (value) => ({ value, error: "" }),
-            (cause) => ({ value: { ...DEFAULT_PREFERENCES }, error: errorMessage(cause) }),
-          ),
           services.userStore.getReadingPosition().then(
             (value) => ({ value, error: "" }),
             (cause) => ({ value: null, error: errorMessage(cause) }),
@@ -130,7 +201,7 @@ export function App({ services }: { services: AppServices }) {
         ]);
         const storedPosition = positionResult.value;
         const firstBook = bookList[0];
-        if (!firstBook?.chapters[0]) throw new Error("The content pack has no readable chapters.");
+        if (!firstBook?.chapters[0]) throw new Error(loadedStrings.noReadableChapters);
         const storedBook =
           storedPosition?.editionId === first.id
             ? bookList.find(
@@ -155,16 +226,15 @@ export function App({ services }: { services: AppServices }) {
         if (!active) return;
         setEdition(first);
         setBooks(bookList);
-        setPreferences(preferenceResult.value);
         setNotice(
           [
             preferenceResult.error
-              ? `Reading preferences could not be loaded: ${preferenceResult.error}`
+              ? loadedStrings.preferencesLoadError.replace("{error}", preferenceResult.error)
               : "",
             positionResult.error
-              ? `Your reading position could not be loaded: ${positionResult.error}`
+              ? loadedStrings.positionLoadError.replace("{error}", positionResult.error)
               : storedPosition && !storedBook
-                ? "Your previous reading position is unavailable in this content. The first chapter is open; your stored records have been preserved."
+                ? loadedStrings.previousPositionUnavailable
                 : "",
           ]
             .filter(Boolean)
@@ -181,7 +251,10 @@ export function App({ services }: { services: AppServices }) {
         }
       } catch (cause) {
         if (active) {
-          setBootError(errorMessage(cause));
+          setBootError({
+            code: cause instanceof AppError ? cause.code : "UNKNOWN",
+            message: errorMessage(cause),
+          });
           setLoading(false);
         }
       }
@@ -191,6 +264,40 @@ export function App({ services }: { services: AppServices }) {
       active = false;
     };
   }, [services, bootAttempt]);
+
+  useEffect(() => {
+    let active = true;
+    services.userStore.listBookmarks().then(
+      (saved) => {
+        if (active) setBookmarks(saved);
+      },
+      (cause) => {
+        if (active)
+          setBookmarkError(
+            stringsRef.current.bookmarksLoadError.replace("{error}", errorMessage(cause)),
+          );
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [services]);
+
+  useEffect(() => {
+    let active = true;
+    services.userStore.listHighlights().then(
+      (saved) => {
+        if (active) setHighlights(saved);
+      },
+      (cause) => {
+        if (active)
+          setNotice(stringsRef.current.highlightsLoadError.replace("{error}", errorMessage(cause)));
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [services]);
 
   useLayoutEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -214,44 +321,62 @@ export function App({ services }: { services: AppServices }) {
   useEffect(() => {
     const viewport = passageRef.current;
     if (!viewport || !chapter) return;
+    const chapterIntent = navigationIntent.current;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    const queueVisiblePosition = () => {
+      clearTimeout(timer);
+      timer = undefined;
+      flushPendingPosition.current = null;
+      if (chapterIntent !== navigationIntent.current) return;
+      const viewportTop = viewport.getBoundingClientRect().top;
+      const visible = chapter.verseUnits.find((unit) => {
+        const marker = document.getElementById(`verse-${unit.order}`);
+        return marker && marker.getBoundingClientRect().bottom >= viewportTop;
+      });
+      if (!visible) return;
+      positionQueue.current = positionQueue.current
+        .catch(() => {})
+        .then(() =>
+          services.userStore.saveReadingPosition({
+            editionId: chapter.editionId,
+            bookCode: chapter.bookCode,
+            chapterLabel: chapter.chapterLabel,
+            verseLabel: visible.label,
+            updatedAt: new Date().toISOString(),
+          }),
+        );
+      void positionQueue.current.catch((cause) =>
+        setNotice(stringsRef.current.positionSaveError.replace("{error}", errorMessage(cause))),
+      );
+    };
     const remember = () => {
       clearTimeout(timer);
+      if (userWritesPaused.current) return;
+      flushPendingPosition.current = queueVisiblePosition;
       timer = setTimeout(() => {
-        const viewportTop = viewport.getBoundingClientRect().top;
-        const visible = chapter.verseUnits.find((unit) => {
-          const marker = document.getElementById(`verse-${unit.order}`);
-          return marker && marker.getBoundingClientRect().bottom >= viewportTop;
-        });
-        if (!visible) return;
-        positionQueue.current = positionQueue.current
-          .catch(() => {})
-          .then(() =>
-            services.userStore.saveReadingPosition({
-              editionId: chapter.editionId,
-              bookCode: chapter.bookCode,
-              chapterLabel: chapter.chapterLabel,
-              verseLabel: visible.label,
-              updatedAt: new Date().toISOString(),
-            }),
-          );
-        void positionQueue.current.catch((cause) =>
-          setNotice(`Reading position could not be saved: ${errorMessage(cause)}`),
-        );
+        if (userWritesPaused.current) return;
+        queueVisiblePosition();
       }, 250);
     };
     viewport.addEventListener("scroll", remember, { passive: true });
     return () => {
       clearTimeout(timer);
+      if (flushPendingPosition.current === queueVisiblePosition)
+        flushPendingPosition.current = null;
       viewport.removeEventListener("scroll", remember);
     };
-  }, [chapter, services]);
+  }, [chapter, services, positionObserverRevision]);
 
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
       const target = event.target as HTMLElement;
-      if (target.closest('input, textarea, [contenteditable="true"]')) return;
+      if (
+        target.closest(
+          'input, textarea, select, [contenteditable="true"], [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]',
+        )
+      )
+        return;
       if (event.key.toLowerCase() === "k") {
         event.preventDefault();
         referenceRef.current?.focus();
@@ -270,6 +395,35 @@ export function App({ services }: { services: AppServices }) {
     else setPendingAction(() => action);
   }
 
+  function stayOnCurrentPassage() {
+    setPendingAction(null);
+    setPositionObserverRevision((value) => value + 1);
+  }
+
+  async function flushUserWrites(): Promise<boolean> {
+    if (!(await notes.save())) return false;
+    flushPendingPosition.current?.();
+    let position: Promise<void>;
+    let preferencesWrite: Promise<void>;
+    do {
+      position = positionQueue.current;
+      preferencesWrite = preferenceQueue.current;
+      await Promise.all([position, preferencesWrite]);
+    } while (position !== positionQueue.current || preferencesWrite !== preferenceQueue.current);
+    return true;
+  }
+
+  function pauseUserWrites() {
+    userWritesPaused.current = true;
+    notes.pauseForClose();
+  }
+
+  function resumeUserWrites() {
+    notes.resumeAfterClose();
+    userWritesPaused.current = false;
+    flushPendingPosition.current?.();
+  }
+
   async function navigate(key: ChapterKey, unitKeys: string[], intent: number) {
     const currentRequest = ++requestId.current;
     setLoading(true);
@@ -282,20 +436,26 @@ export function App({ services }: { services: AppServices }) {
       setExtendSelection(false);
       setNavigationOpen(false);
       const book = books.find((candidate) => candidate.code === key.bookCode);
-      setAnnouncement(`Opened ${book?.name ?? key.bookCode} ${key.chapterLabel}.`);
-      const unit = next.verseUnits.find((candidate) => unitKeys.includes(candidate.key));
-      positionQueue.current = positionQueue.current
-        .catch(() => {})
-        .then(() =>
-          services.userStore.saveReadingPosition({
-            ...key,
-            verseLabel: unit?.label ?? next.verseUnits[0]?.label ?? null,
-            updatedAt: new Date().toISOString(),
-          }),
-        );
-      void positionQueue.current.catch((cause) =>
-        setNotice(`Reading position could not be saved: ${errorMessage(cause)}`),
+      setAnnouncement(
+        strings.openedChapter
+          .replace("{book}", book?.name ?? key.bookCode)
+          .replace("{chapter}", key.chapterLabel),
       );
+      const unit = next.verseUnits.find((candidate) => unitKeys.includes(candidate.key));
+      if (!userWritesPaused.current) {
+        positionQueue.current = positionQueue.current
+          .catch(() => {})
+          .then(() =>
+            services.userStore.saveReadingPosition({
+              ...key,
+              verseLabel: unit?.label ?? next.verseUnits[0]?.label ?? null,
+              updatedAt: new Date().toISOString(),
+            }),
+          );
+        void positionQueue.current.catch((cause) =>
+          setNotice(stringsRef.current.positionSaveError.replace("{error}", errorMessage(cause))),
+        );
+      }
       requestAnimationFrame(() => {
         if (currentRequest !== requestId.current || intent !== navigationIntent.current) return;
         if (unit) {
@@ -308,8 +468,10 @@ export function App({ services }: { services: AppServices }) {
         }
       });
     } catch (cause) {
-      if (currentRequest === requestId.current && intent === navigationIntent.current)
+      if (currentRequest === requestId.current && intent === navigationIntent.current) {
         setNotice(errorMessage(cause));
+        setPositionObserverRevision((value) => value + 1);
+      }
     } finally {
       if (currentRequest === requestId.current) setLoading(false);
     }
@@ -344,6 +506,42 @@ export function App({ services }: { services: AppServices }) {
       if (intent !== navigationIntent.current) return;
       if (fieldError) setReferenceError(errorMessage(cause));
       else setNotice(errorMessage(cause));
+      setPositionObserverRevision((value) => value + 1);
+    }
+  }
+
+  async function goToSourceReference(target: SourceReferenceTarget) {
+    if (!edition) return;
+    const intent = ++navigationIntent.current;
+    try {
+      const resolved = await resolveSourceTarget(target, edition.id, books, (key) =>
+        services.library.getChapter(key),
+      );
+      if (intent !== navigationIntent.current) return;
+      await safely(() => {
+        if (intent === navigationIntent.current)
+          void navigate(resolved.chapter, resolved.unitKeys, intent);
+      });
+    } catch (cause) {
+      if (intent !== navigationIntent.current) return;
+      setNotice(errorMessage(cause));
+      setPositionObserverRevision((value) => value + 1);
+    }
+  }
+
+  async function recoverCorruptDatabase() {
+    if (!services.platform.recoverCorruptDatabase || recoveryBusy) return;
+    setRecoveryBusy(true);
+    setRecoveryError("");
+    try {
+      const location = await services.platform.recoverCorruptDatabase();
+      setRecoveryConfirmOpen(false);
+      setRecoveryLocation(location);
+      setBootAttempt((value) => value + 1);
+    } catch (cause) {
+      setRecoveryError(errorMessage(cause));
+    } finally {
+      setRecoveryBusy(false);
     }
   }
 
@@ -351,19 +549,25 @@ export function App({ services }: { services: AppServices }) {
     event.preventDefault();
     if (!edition) return;
     const currentRequest = ++searchId.current;
+    submittedSearch.current = null;
     setSearchError("");
     setSearching(true);
     try {
-      const next = await services.library.search({
+      const request = {
         editionId: edition.id,
         query: parseSearchQuery(query),
         ...(searchBook !== "all" ? { bookCode: searchBook } : {}),
-        limit: 50,
-        offset: 0,
-      });
+      };
+      const next = await services.library.search({ ...request, limit: 50, offset: 0 });
       if (currentRequest !== searchId.current) return;
+      submittedSearch.current = request;
       setResults(next);
-      setAnnouncement(`${next.total} search ${next.total === 1 ? "result" : "results"}.`);
+      setAnnouncement(
+        (next.total === 1
+          ? strings.searchResultAnnouncementSingular
+          : strings.searchResultAnnouncementPlural
+        ).replace("{count}", String(next.total)),
+      );
     } catch (cause) {
       if (currentRequest === searchId.current) {
         setResults(null);
@@ -372,6 +576,41 @@ export function App({ services }: { services: AppServices }) {
     } finally {
       if (currentRequest === searchId.current) setSearching(false);
     }
+  }
+
+  async function loadMoreResults() {
+    const request = submittedSearch.current;
+    if (!request || !results?.hasMore || searching) return;
+    const currentRequest = ++searchId.current;
+    const offset = results.items.length;
+    setSearchError("");
+    setSearching(true);
+    try {
+      const page = await services.library.search({ ...request, limit: 50, offset });
+      if (currentRequest !== searchId.current) return;
+      setResults((previous) =>
+        previous && previous.items.length === offset
+          ? { items: [...previous.items, ...page.items], total: page.total, hasMore: page.hasMore }
+          : previous,
+      );
+      setAnnouncement(
+        strings.searchPageAnnouncement
+          .replace("{shown}", String(Math.min(offset + page.items.length, page.total)))
+          .replace("{total}", String(page.total)),
+      );
+    } catch (cause) {
+      if (currentRequest === searchId.current) setSearchError(errorMessage(cause));
+    } finally {
+      if (currentRequest === searchId.current) setSearching(false);
+    }
+  }
+
+  function clearStaleSearch() {
+    ++searchId.current;
+    submittedSearch.current = null;
+    setResults(null);
+    setSearchError("");
+    setSearching(false);
   }
 
   function selectUnit(key: string, extend: boolean) {
@@ -409,34 +648,35 @@ export function App({ services }: { services: AppServices }) {
     const text = `${selectedUnits.map((unit) => `${unit.label} ${unit.textPlain}`).join("\n")}\n\n${selectedReference} · ${edition.abbreviation}\n${edition.attribution}`;
     try {
       await services.platform.copyText(text);
-      setAnnouncement("Selected verses copied.");
-      setNotice("Selected verses copied with their reference and edition attribution.");
+      setFailedCopy(null);
+      setAnnouncement(strings.selectedVersesCopied);
+      setNotice(strings.copyAttributionNotice);
     } catch (cause) {
-      setNotice(
-        `Copy failed. You can select and copy the passage text manually. ${errorMessage(cause)}`,
-      );
+      setFailedCopy({ text, error: errorMessage(cause) });
+      setNotice(strings.copyFailedNotice);
     }
   }
 
   function changePreferences(patch: Partial<Preferences>) {
+    if (!preferencesReady) return;
     const next = { ...preferences, ...patch };
     setPreferences(next);
     preferenceQueue.current = preferenceQueue.current
       .catch(() => {})
       .then(() => services.userStore.savePreferences(next));
     void preferenceQueue.current.catch((cause) =>
-      setNotice(
-        `Preferences apply for this session but could not be saved: ${errorMessage(cause)}`,
-      ),
+      setNotice(stringsRef.current.preferencesSaveError.replace("{error}", errorMessage(cause))),
     );
   }
 
   function newNote(linked: boolean) {
-    if (!edition || !chapter || !activeBook) return;
+    if (linked && (!edition || !chapter || !activeBook)) return;
     void safely(() => {
       try {
         notes.create(
-          linked ? createVerseAnchor(edition, chapter, selectedKeys, activeBook.name) : null,
+          linked && edition && chapter && activeBook
+            ? createVerseAnchor(edition, chapter, selectedKeys, activeBook.name)
+            : null,
         );
         setPanel("notes");
       } catch (cause) {
@@ -445,11 +685,200 @@ export function App({ services }: { services: AppServices }) {
     });
   }
 
+  async function addBookmark() {
+    if (!edition || !chapter || !activeBook || !selectedKeys.length || bookmarkBusy) return;
+    setBookmarkBusy(true);
+    setBookmarkError("");
+    try {
+      const anchor = createVerseAnchor(edition, chapter, selectedKeys, activeBook.name);
+      const now = new Date().toISOString();
+      const saved = await services.userStore.saveBookmark({
+        id: crypto.randomUUID(),
+        anchor,
+        label: "",
+        createdAt: now,
+        updatedAt: now,
+      });
+      setBookmarks((current) => [saved, ...current.filter((item) => item.id !== saved.id)]);
+      setPanel("bookmarks");
+      setAnnouncement(
+        strings.bookmarkedReference.replace("{reference}", saved.anchor.displayReferenceSnapshot),
+      );
+    } catch (cause) {
+      setBookmarkError(strings.bookmarkSaveError.replace("{error}", errorMessage(cause)));
+      setPanel("bookmarks");
+    } finally {
+      setBookmarkBusy(false);
+    }
+  }
+
+  async function colorSelection(colorToken: HighlightColor | null) {
+    if (!edition || !chapter || !activeBook || selectedUnits.length === 0 || highlightBusy) return;
+    setHighlightBusy(true);
+    try {
+      const matching = selectedUnits.map((unit) =>
+        highlights.find((item) => item.anchor.unitKeys[0] === unit.key),
+      );
+      if (colorToken) {
+        const now = new Date().toISOString();
+        const records = selectedUnits.map((unit, index) => {
+          const previous = matching[index];
+          return {
+            id: previous?.id ?? crypto.randomUUID(),
+            anchor:
+              previous && anchorMatchesChapter(previous.anchor, edition, chapter)
+                ? previous.anchor
+                : createVerseAnchor(edition, chapter, [unit.key], activeBook.name),
+            colorToken,
+            createdAt: previous?.createdAt ?? now,
+            updatedAt: now,
+          } satisfies Highlight;
+        });
+        const saved = await services.userStore.saveHighlights(records);
+        const savedIds = new Set(saved.map((item) => item.id));
+        setHighlights((current) => [...current.filter((item) => !savedIds.has(item.id)), ...saved]);
+        setAnnouncement(
+          (selectedUnits.length === 1
+            ? strings.highlightedUnitSingular
+            : strings.highlightedUnitPlural
+          )
+            .replace("{count}", String(selectedUnits.length))
+            .replace("{color}", strings[colorToken]),
+        );
+      } else {
+        const ids = matching.flatMap((item) => (item ? [item.id] : []));
+        if (ids.length) await services.userStore.deleteHighlights(ids);
+        const removed = new Set(ids);
+        setHighlights((current) => current.filter((item) => !removed.has(item.id)));
+        setAnnouncement(strings.highlightsRemoved);
+      }
+    } catch (cause) {
+      setNotice(strings.highlightsChangeError.replace("{error}", errorMessage(cause)));
+    } finally {
+      setHighlightBusy(false);
+    }
+  }
+
+  async function saveBookmarkLabel(bookmark: Bookmark, label: string): Promise<boolean> {
+    if (bookmarkBusy) return false;
+    setBookmarkBusy(true);
+    setBookmarkError("");
+    try {
+      const saved = await services.userStore.saveBookmark({
+        ...bookmark,
+        label,
+        updatedAt: new Date().toISOString(),
+      });
+      setBookmarks((current) => [saved, ...current.filter((item) => item.id !== saved.id)]);
+      setAnnouncement(strings.bookmarkLabelSaved);
+      return true;
+    } catch (cause) {
+      setBookmarkError(strings.bookmarkLabelSaveError.replace("{error}", errorMessage(cause)));
+      return false;
+    } finally {
+      setBookmarkBusy(false);
+    }
+  }
+
+  async function removeBookmark() {
+    const target = deleteBookmarkTarget;
+    if (!target || bookmarkBusy) return;
+    setBookmarkBusy(true);
+    setBookmarkError("");
+    try {
+      await services.userStore.deleteBookmark(target.id);
+      setBookmarks((current) => current.filter((item) => item.id !== target.id));
+      setDeleteBookmarkTarget(null);
+      setAnnouncement(strings.bookmarkRemoved);
+    } catch (cause) {
+      setBookmarkError(strings.bookmarkRemoveError.replace("{error}", errorMessage(cause)));
+      setDeleteBookmarkTarget(null);
+    } finally {
+      setBookmarkBusy(false);
+    }
+  }
+
+  async function openBookmark(bookmark: Bookmark) {
+    if (
+      !edition ||
+      bookmark.anchor.editionId !== edition.id ||
+      bookmark.anchor.versificationId !== edition.versificationId
+    ) {
+      setBookmarkError(strings.bookmarkEditionMissing);
+      return;
+    }
+    const intent = ++navigationIntent.current;
+    const key = {
+      editionId: bookmark.anchor.editionId,
+      bookCode: bookmark.anchor.start.bookCode,
+      chapterLabel: bookmark.anchor.start.chapterLabel,
+    };
+    try {
+      const content = await services.library.getChapter(key);
+      if (intent !== navigationIntent.current) return;
+      const exact = anchorMatchesContent(bookmark.anchor, edition, content);
+      await safely(() => {
+        if (intent !== navigationIntent.current) return;
+        setBookmarkError(exact ? "" : strings.bookmarkPassageChanged);
+        void navigate(key, exact ? bookmark.anchor.unitKeys : [], intent);
+        if (window.matchMedia("(max-width: 1099px)").matches) setPanel(null);
+      });
+    } catch (cause) {
+      if (intent === navigationIntent.current)
+        setBookmarkError(strings.bookmarkPassageMissing.replace("{error}", errorMessage(cause)));
+    }
+  }
+
+  async function openNotePassage(anchor: VerseAnchor) {
+    if (!edition || anchor.editionId !== edition.id) {
+      setNotice(strings.noteEditionMissing);
+      return;
+    }
+    if (anchor.versificationId !== edition.versificationId) {
+      setNotice(strings.noteVersificationChanged);
+      return;
+    }
+    const intent = ++navigationIntent.current;
+    const key = {
+      editionId: anchor.editionId,
+      bookCode: anchor.start.bookCode,
+      chapterLabel: anchor.start.chapterLabel,
+    };
+    try {
+      const content = await services.library.getChapter(key);
+      if (intent !== navigationIntent.current) return;
+      const exact = anchorMatchesContent(anchor, edition, content);
+      await safely(() => {
+        if (intent !== navigationIntent.current) return;
+        if (!exact) setNotice(strings.notePassageChanged);
+        void navigate(key, exact ? anchor.unitKeys : [], intent);
+        if (window.matchMedia("(max-width: 1099px)").matches) setPanel(null);
+      });
+    } catch (cause) {
+      if (intent === navigationIntent.current)
+        setNotice(strings.notePassageMissing.replace("{error}", errorMessage(cause)));
+    }
+  }
+
+  async function attachNotePassage(noteId: string, input: string) {
+    if (!edition || notes.draft?.id !== noteId)
+      throw new AppError("NOTE_UNAVAILABLE", strings.noteNoLongerOpen);
+    const target = await services.library.resolveReference(input, edition.id);
+    if (target.unitKeys.length === 0)
+      throw new AppError("REFERENCE_INVALID", strings.verseLabelRequired);
+    const content = await services.library.getChapter(target.chapter);
+    const book = books.find((item) => item.code === target.chapter.bookCode);
+    if (!book) throw new AppError("CONTENT_UNAVAILABLE", strings.bookUnavailable);
+    const anchor = createVerseAnchor(edition, content, target.unitKeys, book.name);
+    if (!notes.edit({ anchor }, noteId))
+      throw new AppError("NOTE_CHANGED", strings.noteChangedDuringLink);
+  }
+
   function renderLibrary() {
     return (
       <>
-        <div className="sidebar-section-label">LIBRARY</div>
-        <nav className="main-navigation" aria-label="Workspace">
+        <div className="sidebar-section-label">{strings.library}</div>
+        <nav className="main-navigation" aria-label={strings.workspace}>
           <Button
             variant="ghost"
             className={panel === null ? "nav-item active" : "nav-item"}
@@ -461,7 +890,7 @@ export function App({ services }: { services: AppServices }) {
             }}
           >
             <BookOpen size={18} aria-hidden="true" />
-            Read Bible
+            {strings.readBible}
           </Button>
           <Button
             variant="ghost"
@@ -474,7 +903,7 @@ export function App({ services }: { services: AppServices }) {
             }}
           >
             <Search size={18} aria-hidden="true" />
-            Search Scripture
+            {strings.searchScripture}
           </Button>
           <Button
             variant="ghost"
@@ -485,12 +914,27 @@ export function App({ services }: { services: AppServices }) {
             }}
           >
             <FileText size={18} aria-hidden="true" />
-            My notes<span className="nav-count">{notes.notes.length}</span>
+            {strings.notes}
+            <span className="nav-count">{notes.notes.length}</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className={panel === "bookmarks" ? "nav-item active" : "nav-item"}
+            onClick={() => {
+              void safely(() => {
+                setPanel("bookmarks");
+                setNavigationOpen(false);
+              });
+            }}
+          >
+            <BookmarkIcon size={18} aria-hidden="true" />
+            {strings.bookmarks}
+            <span className="nav-count">{bookmarks.length}</span>
           </Button>
         </nav>
         <div className="sidebar-divider" />
-        <div className="sidebar-section-label">BOOKS & CHAPTERS</div>
-        <nav className="book-navigation" aria-label="Book and chapter">
+        <div className="sidebar-section-label">{strings.booksAndChapters}</div>
+        <nav className="book-navigation" aria-label={strings.bookAndChapter}>
           {books.map((book) => (
             <div key={book.code} className="book-group">
               <Button
@@ -507,7 +951,7 @@ export function App({ services }: { services: AppServices }) {
                 }}
               >
                 <BookOpen size={15} aria-hidden="true" />
-                {book.name}
+                <span lang={edition?.languageTag}>{book.name}</span>
               </Button>
               {chapter?.bookCode === book.code && (
                 <div className="chapter-grid">
@@ -520,7 +964,9 @@ export function App({ services }: { services: AppServices }) {
                           : "chapter-button"
                       }
                       key={chapterLabel}
-                      aria-label={`${book.name}, chapter ${chapterLabel}`}
+                      aria-label={strings.bookChapterLabel
+                        .replace("{book}", book.name)
+                        .replace("{chapter}", chapterLabel)}
                       aria-current={chapter.chapterLabel === chapterLabel ? "page" : undefined}
                       onClick={() => {
                         goToChapter({
@@ -541,12 +987,19 @@ export function App({ services }: { services: AppServices }) {
         <div className="sidebar-bottom">
           <div className="edition-mark">
             <Leaf size={18} aria-hidden="true" />
-            <span>{edition?.abbreviation ?? "Local library"}</span>
+            <span>{edition?.abbreviation ?? strings.localLibrary}</span>
           </div>
-          <p>{edition?.title ?? "Loading your library…"}</p>
+          <p>
+            {edition?.title ??
+              (bootError
+                ? bootError.code === "STORAGE_CORRUPT" || bootError.code === "STORAGE_IN_USE"
+                  ? strings.personalDataUnavailable
+                  : strings.contentUnavailable
+                : strings.loadingLibrary)}
+          </p>
           <div className="offline-label">
             <span className="status-dot" />
-            Available offline
+            {strings.availableOffline}
           </div>
         </div>
       </>
@@ -558,17 +1011,26 @@ export function App({ services }: { services: AppServices }) {
 
   return (
     <div className="app-shell" inert={closeGuard.active}>
-      <a href="#passage" className="skip-link">
-        Skip to reading
+      <a
+        href="#passage"
+        className="skip-link"
+        onClick={(event) => {
+          if (!singlePane || !panel) return;
+          event.preventDefault();
+          setPanel(null);
+          requestAnimationFrame(() => passageRef.current?.focus());
+        }}
+      >
+        {strings.skipToReading}
       </a>
-      <aside className="sidebar desktop-sidebar" aria-label="Library sidebar">
+      <aside className="sidebar desktop-sidebar" aria-label={strings.librarySidebar}>
         <div className="brand">
           <div className="brand-icon">
             <BookOpen size={23} aria-hidden="true" />
           </div>
           <div>
             <strong>Afaan Oromo</strong>
-            <span>BIBLE READER</span>
+            <span>{strings.bibleReader}</span>
           </div>
         </div>
         {renderLibrary()}
@@ -580,7 +1042,7 @@ export function App({ services }: { services: AppServices }) {
             size="icon"
             className="mobile-menu"
             onClick={() => setNavigationOpen(true)}
-            aria-label="Open library navigation"
+            aria-label={strings.openLibraryNavigation}
           >
             <List size={21} />
           </Button>
@@ -593,32 +1055,41 @@ export function App({ services }: { services: AppServices }) {
             <BookOpen size={17} aria-hidden="true" />
             <Input
               ref={referenceRef}
-              aria-label="Open a Scripture reference"
+              aria-label={strings.openReference}
               aria-invalid={!!referenceError}
               aria-describedby={referenceError ? "reference-error" : undefined}
               placeholder={
                 books[0]
-                  ? `Go to a passage · ${books[0].code} ${books[0].chapters[0]}:1`
-                  : "Go to a passage"
+                  ? `${strings.goToPassage} · ${books[0].code} ${books[0].chapters[0]}:1`
+                  : strings.goToPassage
               }
               value={referenceInput}
               onChange={(event) => setReferenceInput(event.target.value)}
             />
             <Button variant="ghost" size="sm" type="submit">
-              Go
+              {strings.go}
               <ArrowRight size={14} aria-hidden="true" />
             </Button>
           </form>
           <div className="toolbar-actions">
             <span className="local-badge">
               <ShieldCheck size={14} aria-hidden="true" />
-              Offline & private
+              {strings.offlinePrivate}
             </span>
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Reading preferences"
+              aria-label={strings.aboutContent}
+              onClick={() => setAboutOpen(true)}
+            >
+              <Info size={19} aria-hidden="true" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={strings.appearance}
               data-dialog-focus-fallback
+              disabled={!preferencesReady}
               onClick={() => setSettingsOpen(true)}
             >
               <Settings2 size={19} />
@@ -631,12 +1102,12 @@ export function App({ services }: { services: AppServices }) {
           </div>
         )}
         {notice && (
-          <div className="notice" role="status">
+          <div className="notice" role="status" aria-label={notice}>
             <span>{notice}</span>
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Dismiss message"
+              aria-label={strings.dismissMessage}
               onClick={() => setNotice("")}
             >
               <X size={15} />
@@ -654,17 +1125,39 @@ export function App({ services }: { services: AppServices }) {
             {bootError ? (
               <div className="empty-state">
                 <BookOpen size={36} aria-hidden="true" />
-                <h1>Content unavailable</h1>
-                <p role="alert">{bootError}</p>
-                <p className="muted">Your personal records have not been reset.</p>
+                <h1>
+                  {bootError.code === "STORAGE_CORRUPT" || bootError.code === "STORAGE_IN_USE"
+                    ? strings.personalDataUnavailable
+                    : strings.contentUnavailable}
+                </h1>
+                <p role="alert">{bootError.message}</p>
+                {bootError.code === "STORAGE_IN_USE" ? (
+                  <p className="muted">{strings.storageInUseHelp}</p>
+                ) : bootError.code === "STORAGE_CORRUPT" ? (
+                  <p className="muted">{strings.storageCorruptHelp}</p>
+                ) : (
+                  <p className="muted">{strings.recordsNotReset}</p>
+                )}
                 <Button variant="outline" onClick={() => setBootAttempt((value) => value + 1)}>
-                  Try opening content again
+                  {strings.tryOpeningAgain}
                 </Button>
+                {bootError.code === "STORAGE_CORRUPT" &&
+                  services.platform.recoverCorruptDatabase && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setRecoveryError("");
+                        setRecoveryConfirmOpen(true);
+                      }}
+                    >
+                      {strings.archiveUnreadableAction}
+                    </Button>
+                  )}
               </div>
             ) : !chapter || !edition ? (
               <div className="empty-state">
                 <LoaderCircle className="spin" size={26} aria-hidden="true" />
-                <p>Opening your reading space…</p>
+                <p>{strings.openingReadingSpace}</p>
               </div>
             ) : (
               <>
@@ -673,10 +1166,10 @@ export function App({ services }: { services: AppServices }) {
                     <BookOpen size={15} aria-hidden="true" />
                     {edition.abbreviation}
                     <span className="context-divider">/</span>
-                    {activeBook?.name}
+                    <span lang={edition.languageTag}>{activeBook?.name}</span>
                   </span>
                   <span className="small muted">
-                    {chapter.verseUnits.length} source verse units
+                    {strings.sourceVerseUnits.replace("{count}", String(chapter.verseUnits.length))}
                   </span>
                 </div>
                 <article
@@ -689,27 +1182,38 @@ export function App({ services }: { services: AppServices }) {
                   }
                 >
                   <div className="chapter-heading">
-                    <div className="eyebrow">{activeBook?.name}</div>
-                    <h1>Chapter {chapter.chapterLabel}</h1>
+                    <div className="eyebrow" lang={edition.languageTag}>
+                      {activeBook?.name}
+                    </div>
+                    <h1>
+                      {strings.chapter} {chapter.chapterLabel}
+                    </h1>
                     <div className="heading-rule" />
                   </div>
                   {edition.isSynthetic && (
                     <aside className="fixture-banner">
-                      <span className="fixture-tag">DEVELOPMENT PREVIEW</span>
+                      <span className="fixture-tag">{strings.developmentPreview}</span>
                       <strong>{en.fixtureNotice}</strong>
                       <p>{en.fixtureDetail}</p>
                     </aside>
                   )}
+                  {edition.technicalReviewOnly && (
+                    <aside className="fixture-banner" role="note">
+                      <span className="fixture-tag">{strings.developmentPreview}</span>
+                      <strong>{en.technicalReviewNotice}</strong>
+                      <p>{en.technicalReviewDetail}</p>
+                    </aside>
+                  )}
                   <ReaderContent
                     chapter={chapter}
+                    strings={strings}
                     selectedKeys={selectedKeys}
+                    highlightColors={highlightColors}
                     onSelect={selectUnit}
                     languageTag={edition.languageTag}
                     bookName={activeBook?.name ?? chapter.bookCode}
                     onNavigate={(target) => {
-                      void goToReference(
-                        `${target.bookCode} ${target.chapterLabel}:${target.verseLabel}`,
-                      );
+                      void goToSourceReference(target);
                     }}
                   />
                   <div className="chapter-end">
@@ -717,7 +1221,7 @@ export function App({ services }: { services: AppServices }) {
                     <Leaf size={17} aria-hidden="true" />
                     <span />
                   </div>
-                  <nav aria-label="Adjacent chapter" className="chapter-pagination">
+                  <nav aria-label={strings.adjacentChapter} className="chapter-pagination">
                     <Button
                       variant="outline"
                       disabled={!previous || loading}
@@ -726,7 +1230,7 @@ export function App({ services }: { services: AppServices }) {
                       }}
                     >
                       <ChevronLeft size={16} aria-hidden="true" />
-                      Previous chapter
+                      {strings.previousChapter}
                     </Button>
                     <span className="muted small">
                       {activeBook?.name} {chapter.chapterLabel}
@@ -738,7 +1242,7 @@ export function App({ services }: { services: AppServices }) {
                         if (next) goToChapter(next);
                       }}
                     >
-                      Next chapter
+                      {strings.nextChapter}
                       <ChevronRight size={16} aria-hidden="true" />
                     </Button>
                   </nav>
@@ -748,19 +1252,42 @@ export function App({ services }: { services: AppServices }) {
             )}
           </main>
           {panel && (
-            <aside
+            <div
               className="study-panel"
-              aria-label={panel === "notes" ? "Personal notes" : "Scripture search"}
+              role={singlePane ? "main" : "complementary"}
+              aria-label={
+                panel === "notes"
+                  ? strings.personalNotes
+                  : panel === "bookmarks"
+                    ? strings.savedBookmarks
+                    : strings.scriptureSearch
+              }
             >
               <div className="panel-heading">
                 <div>
-                  <div className="eyebrow">YOUR READING SPACE</div>
-                  <h2>{panel === "notes" ? "My notes" : "Search Scripture"}</h2>
+                  <div className="eyebrow">{strings.yourReadingSpace}</div>
+                  {singlePane ? (
+                    <h1>
+                      {panel === "notes"
+                        ? strings.notes
+                        : panel === "bookmarks"
+                          ? strings.bookmarks
+                          : strings.searchScripture}
+                    </h1>
+                  ) : (
+                    <h2>
+                      {panel === "notes"
+                        ? strings.notes
+                        : panel === "bookmarks"
+                          ? strings.bookmarks
+                          : strings.searchScripture}
+                    </h2>
+                  )}
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Close study panel"
+                  aria-label={strings.closeStudyPanel}
                   onClick={() => {
                     void safely(() => setPanel(null));
                   }}
@@ -776,21 +1303,32 @@ export function App({ services }: { services: AppServices }) {
                 }}
               >
                 <ArrowLeft size={15} aria-hidden="true" />
-                Back to reading
+                {strings.backToReading}
               </Button>
               {panel === "search" ? (
                 <SearchPanel
-                  editionLabel={edition?.abbreviation ?? "your edition"}
+                  editionLabel={edition?.abbreviation ?? strings.yourEdition}
+                  strings={strings}
+                  languageTag={edition?.languageTag ?? "en"}
                   books={books}
                   query={query}
-                  setQuery={setQuery}
+                  setQuery={(value) => {
+                    setQuery(value);
+                    clearStaleSearch();
+                  }}
                   book={searchBook}
-                  setBook={setSearchBook}
+                  setBook={(value) => {
+                    setSearchBook(value);
+                    clearStaleSearch();
+                  }}
                   searching={searching}
                   error={searchError}
                   results={results}
                   onSubmit={(event) => {
                     void runSearch(event);
+                  }}
+                  onLoadMore={() => {
+                    void loadMoreResults();
                   }}
                   onOpen={(result) => {
                     goToChapter(
@@ -804,52 +1342,52 @@ export function App({ services }: { services: AppServices }) {
                     );
                   }}
                 />
+              ) : panel === "bookmarks" ? (
+                <BookmarksPanel
+                  strings={strings}
+                  bookmarks={bookmarks}
+                  edition={edition}
+                  busy={bookmarkBusy}
+                  error={bookmarkError}
+                  onOpen={(bookmark) => {
+                    void openBookmark(bookmark);
+                  }}
+                  onSaveLabel={saveBookmarkLabel}
+                  onDelete={setDeleteBookmarkTarget}
+                />
               ) : (
                 <NotesPanel
                   workspace={notes}
+                  edition={edition}
+                  strings={strings}
+                  uiLocale={preferences.uiLocale}
                   onCreate={() => newNote(false)}
                   onOpen={(note) => {
                     void safely(() => notes.open(note));
                   }}
-                  onDelete={() => setDeleteOpen(true)}
-                  onOpenPassage={(anchor) => {
-                    if (anchor.editionId !== edition?.id) {
-                      setNotice(
-                        "The edition linked to this note is not installed. The note has been preserved.",
-                      );
-                      return;
-                    }
-                    if (
-                      anchor.contentRevision !== edition.contentRevision ||
-                      anchor.versificationId !== edition.versificationId
-                    ) {
-                      setNotice(
-                        "This note refers to a different content revision. Its original link is preserved; verify the passage before relinking.",
-                      );
-                      return;
-                    }
-                    goToChapter(
-                      {
-                        editionId: anchor.editionId,
-                        bookCode: anchor.start.bookCode,
-                        chapterLabel: anchor.start.chapterLabel,
-                      },
-                      anchor.unitKeys,
-                      true,
-                    );
+                  onDelete={() => {
+                    setDeleteFailed(false);
+                    setDeleteOpen(true);
                   }}
+                  onOpenPassage={(anchor) => {
+                    void openNotePassage(anchor);
+                  }}
+                  onAttachPassage={attachNotePassage}
+                  onCopyDraft={(text) => services.platform.copyText(text)}
                 />
               )}
-            </aside>
+            </div>
           )}
         </div>
         {selectedUnits.length > 0 && (
-          <div className="selection-toolbar" aria-label="Selected verse actions">
+          <section className="selection-toolbar" aria-label={strings.selectedVerseActions}>
             <div>
               <strong>{selectedReference}</strong>
               <span>
-                {selectedUnits.length} {selectedUnits.length === 1 ? "verse unit" : "verse units"}{" "}
-                selected
+                {(selectedUnits.length === 1
+                  ? strings.selectedVerseUnit
+                  : strings.selectedVerseUnits
+                ).replace("{count}", String(selectedUnits.length))}
               </span>
             </div>
             <Button
@@ -857,7 +1395,7 @@ export function App({ services }: { services: AppServices }) {
               aria-pressed={extendSelection}
               onClick={() => setExtendSelection((value) => !value)}
             >
-              {extendSelection ? "Choose range end…" : "Extend range"}
+              {extendSelection ? strings.chooseRangeEnd : strings.extendRange}
             </Button>
             <Button
               variant="outline"
@@ -866,16 +1404,60 @@ export function App({ services }: { services: AppServices }) {
               }}
             >
               <Copy size={15} aria-hidden="true" />
-              Copy
+              {strings.copy}
             </Button>
             <Button onClick={() => newNote(true)}>
               <Feather size={15} aria-hidden="true" />
-              Add note
+              {strings.addNote}
             </Button>
+            <Button
+              variant="outline"
+              disabled={bookmarkBusy}
+              onClick={() => {
+                void addBookmark();
+              }}
+            >
+              <BookmarkIcon size={15} aria-hidden="true" />
+              {strings.bookmark}
+            </Button>
+            <div className="highlight-actions" role="group" aria-label={strings.highlightColor}>
+              {(["yellow", "green", "blue", "rose"] as const).map((color) => (
+                <Button
+                  key={color}
+                  variant="outline"
+                  disabled={highlightBusy}
+                  aria-label={strings.highlightColorAction.replace("{color}", strings[color])}
+                  aria-pressed={selectedUnits.every((unit) => highlightColors[unit.key] === color)}
+                  onClick={() => {
+                    void colorSelection(color);
+                  }}
+                >
+                  <span
+                    className={`highlight-swatch highlight-swatch-${color}`}
+                    aria-hidden="true"
+                  />
+                  {strings[color]}
+                </Button>
+              ))}
+              <Button
+                variant="ghost"
+                disabled={
+                  highlightBusy ||
+                  !selectedUnits.some((unit) =>
+                    highlights.some((item) => item.anchor.unitKeys[0] === unit.key),
+                  )
+                }
+                onClick={() => {
+                  void colorSelection(null);
+                }}
+              >
+                {strings.removeHighlight}
+              </Button>
+            </div>
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Clear verse selection"
+              aria-label={strings.clearVerseSelection}
               onClick={() => {
                 setSelectedKeys([]);
                 setExtendSelection(false);
@@ -883,51 +1465,148 @@ export function App({ services }: { services: AppServices }) {
             >
               <X size={17} />
             </Button>
-          </div>
+          </section>
         )}
         <footer className="statusbar">
           <span>
             <span className="status-dot" />
-            All reading works offline
+            {strings.allReadingOffline}
           </span>
-          <span>Made for a thoughtful reading experience</span>
+          <span>{strings.thoughtfulReading}</span>
         </footer>
       </div>
       <div className="sr-only" role="status" aria-live="polite">
         {announcement}
       </div>
       <Dialog open={navigationOpen} onOpenChange={setNavigationOpen}>
-        <DialogContent className="navigation-dialog">
-          <DialogTitle>Library</DialogTitle>
-          <DialogDescription>Choose a workspace, book, or chapter.</DialogDescription>
+        <DialogContent closeLabel={strings.closeDialog} className="navigation-dialog">
+          <DialogTitle>{strings.libraryDialogTitle}</DialogTitle>
+          <DialogDescription>{strings.libraryDialogDescription}</DialogDescription>
           {renderLibrary()}
         </DialogContent>
       </Dialog>
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent>
-          <DialogTitle>Make room for reading</DialogTitle>
+      <AboutDialog
+        open={aboutOpen}
+        onOpenChange={setAboutOpen}
+        edition={edition}
+        books={books}
+        strings={strings}
+      />
+      <Dialog
+        open={recoveryConfirmOpen}
+        onOpenChange={(open) => {
+          if (!recoveryBusy) setRecoveryConfirmOpen(open);
+        }}
+      >
+        <DialogContent closeLabel={strings.closeDialog} showCloseButton={!recoveryBusy}>
+          <DialogTitle>{strings.archiveUnreadableTitle}</DialogTitle>
+          <DialogDescription>{strings.archiveUnreadableDescription}</DialogDescription>
+          {recoveryError && <p role="alert">{recoveryError}</p>}
+          <div className="dialog-actions">
+            <Button
+              variant="outline"
+              disabled={recoveryBusy}
+              onClick={() => setRecoveryConfirmOpen(false)}
+            >
+              {strings.cancel}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={recoveryBusy}
+              onClick={() => void recoverCorruptDatabase()}
+            >
+              {recoveryBusy ? strings.archiving : strings.archiveCreateEmpty}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={recoveryLocation !== null} onOpenChange={() => {}}>
+        <DialogContent closeLabel={strings.closeDialog} showCloseButton={false}>
+          <DialogTitle>{strings.personalDatabaseReady}</DialogTitle>
           <DialogDescription>
-            Choose a comfortable reading experience. Preferences are saved on this device.
+            {strings.archivedAt.replace("{location}", recoveryLocation ?? "")}
           </DialogDescription>
+          <Button
+            onClick={() => {
+              setRecoveryLocation(null);
+              setSettingsOpen(true);
+            }}
+          >
+            {strings.openBackupControls}
+          </Button>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={failedCopy !== null}
+        onOpenChange={(open) => {
+          if (!open) setFailedCopy(null);
+        }}
+      >
+        <DialogContent closeLabel={strings.closeDialog}>
+          <DialogTitle>{strings.manualCopyTitle}</DialogTitle>
+          <DialogDescription>
+            {strings.manualCopyDescription.replace("{error}", failedCopy?.error ?? "")}
+          </DialogDescription>
+          <Textarea
+            className="manual-copy-text"
+            aria-label={strings.manualCopyLabel}
+            lang={edition?.languageTag}
+            readOnly
+            value={failedCopy?.text ?? ""}
+            onFocus={(event) => event.currentTarget.select()}
+          />
+          <Button variant="outline" onClick={() => setFailedCopy(null)}>
+            {strings.close}
+          </Button>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent closeLabel={strings.closeDialog}>
+          <DialogTitle>{strings.settingsTitle}</DialogTitle>
+          <DialogDescription>{strings.settingsDescription}</DialogDescription>
           <div className="settings-content">
             <SelectField
-              label="Appearance"
+              label={strings.interfaceLanguage}
+              id="ui-locale-setting"
+              value={preferences.uiLocale}
+              onValueChange={(value) =>
+                changePreferences({ uiLocale: value as Preferences["uiLocale"] })
+              }
+              options={[
+                { value: "en", label: strings.english },
+                {
+                  value: "om",
+                  label: oromoCatalogComplete ? strings.oromoOptionLabel : strings.oromoFallback,
+                },
+              ]}
+            />
+            <p className="field-help" role="status">
+              {preferences.uiLocale === "om"
+                ? oromoCatalogComplete
+                  ? strings.oromoDescription
+                  : strings.oromoFallbackDescription
+                : oromoCatalogComplete
+                  ? strings.englishDescription
+                  : strings.englishFallbackDescription}
+            </p>
+            <SelectField
+              label={strings.appearanceLabel}
               id="theme-setting"
               value={preferences.theme}
               onValueChange={(value) => changePreferences({ theme: value as Preferences["theme"] })}
               options={[
-                { value: "system", label: "Follow system" },
-                { value: "light", label: "Light" },
-                { value: "dark", label: "Dark" },
+                { value: "system", label: strings.followSystem },
+                { value: "light", label: strings.light },
+                { value: "dark", label: strings.dark },
               ]}
             />
             <div className="field">
-              <label>Scripture text size</label>
+              <label>{strings.scriptureTextSize}</label>
               <div className="font-control">
                 <Button
                   variant="outline"
                   size="icon"
-                  aria-label="Decrease text size"
+                  aria-label={strings.decreaseTextSize}
                   disabled={preferences.fontSizePx <= 16}
                   onClick={() =>
                     changePreferences({ fontSizePx: Math.max(16, preferences.fontSizePx - 2) })
@@ -939,7 +1618,7 @@ export function App({ services }: { services: AppServices }) {
                 <Button
                   variant="outline"
                   size="icon"
-                  aria-label="Increase text size"
+                  aria-label={strings.increaseTextSize}
                   disabled={preferences.fontSizePx >= 32}
                   onClick={() =>
                     changePreferences({ fontSizePx: Math.min(32, preferences.fontSizePx + 2) })
@@ -958,58 +1637,107 @@ export function App({ services }: { services: AppServices }) {
             </div>
             <SelectField
               id="line-height-setting"
-              label="Line spacing"
+              label={strings.lineSpacing}
               value={String(preferences.lineHeight)}
               onValueChange={(value) =>
                 changePreferences({ lineHeight: Number(value) as Preferences["lineHeight"] })
               }
               options={[
-                { value: "1.4", label: "Compact" },
-                { value: "1.65", label: "Comfortable" },
-                { value: "1.9", label: "Relaxed" },
+                { value: "1.4", label: strings.compact },
+                { value: "1.65", label: strings.comfortable },
+                { value: "1.9", label: strings.relaxed },
               ]}
             />
             <SelectField
               id="reading-width-setting"
-              label="Reading width"
+              label={strings.readingWidth}
               value={preferences.width}
               onValueChange={(value) => changePreferences({ width: value as Preferences["width"] })}
               options={[
-                { value: "comfortable", label: "Comfortable" },
-                { value: "wide", label: "Wide" },
+                { value: "comfortable", label: strings.comfortable },
+                { value: "wide", label: strings.wide },
               ]}
             />
             <div className="settings-edition">
-              <div className="eyebrow">CONTENT INFORMATION</div>
+              <div className="eyebrow">{strings.contentInformation}</div>
               <strong>{edition?.title}</strong>
               <p>{edition?.attribution}</p>
               <p>{edition?.licenseNotice}</p>
-              <p className="field-help">
-                Interface: English development fallback. Afaan Oromo wording requires fluent review
-                before release.
-              </p>
             </div>
+            <BackupControls
+              services={services}
+              strings={strings}
+              uiLocale={preferences.uiLocale}
+              flushWrites={flushUserWrites}
+              pauseWrites={pauseUserWrites}
+              resumeWrites={resumeUserWrites}
+              writesBusy={bookmarkBusy || highlightBusy || deleteBusy}
+            />
           </div>
           <DialogClose asChild>
-            <Button variant="outline">Done</Button>
+            <Button variant="outline">{strings.done}</Button>
           </DialogClose>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={deleteBookmarkTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !bookmarkBusy) setDeleteBookmarkTarget(null);
+        }}
+      >
+        <DialogContent closeLabel={strings.closeDialog} showCloseButton={!bookmarkBusy}>
+          <DialogTitle>{strings.removeBookmarkTitle}</DialogTitle>
+          <DialogDescription>
+            {strings.removeBookmarkDescription.replace(
+              "{reference}",
+              deleteBookmarkTarget?.anchor.displayReferenceSnapshot ?? "",
+            )}
+          </DialogDescription>
+          <div className="dialog-actions">
+            <Button
+              variant="outline"
+              disabled={bookmarkBusy}
+              onClick={() => setDeleteBookmarkTarget(null)}
+            >
+              {strings.cancel}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={bookmarkBusy}
+              onClick={() => {
+                void removeBookmark();
+              }}
+            >
+              {strings.removeBookmark}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
       <Dialog
         open={deleteOpen}
         onOpenChange={(open) => {
-          if (!deleteBusy) setDeleteOpen(open);
+          if (!deleteBusy) {
+            setDeleteOpen(open);
+            if (!open) setDeleteFailed(false);
+          }
         }}
       >
-        <DialogContent showCloseButton={!deleteBusy}>
-          <DialogTitle>Delete this note?</DialogTitle>
+        <DialogContent closeLabel={strings.closeDialog} showCloseButton={!deleteBusy}>
+          <DialogTitle>{strings.deleteNoteTitle}</DialogTitle>
           <DialogDescription>
-            “{notes.draft ? noteTitle(notes.draft) : "This note"}” will be removed from this device.
-            This action cannot be undone.
+            {strings.deleteNoteDescription.replace(
+              "{title}",
+              notes.draft ? noteTitle(notes.draft, strings) : strings.thisNote,
+            )}
           </DialogDescription>
+          {deleteFailed && (
+            <p className="error-box" role="alert">
+              {strings.noteDeleteFailed.replace("{error}", notes.error || strings.couldNotSave)}
+            </p>
+          )}
           <div className="dialog-actions">
             <Button variant="outline" disabled={deleteBusy} onClick={() => setDeleteOpen(false)}>
-              Keep note
+              {strings.keepNote}
             </Button>
             <Button
               variant="destructive"
@@ -1020,11 +1748,12 @@ export function App({ services }: { services: AppServices }) {
                   .remove()
                   .then((success) => {
                     if (success) setDeleteOpen(false);
+                    else setDeleteFailed(true);
                   })
                   .finally(() => setDeleteBusy(false));
               }}
             >
-              {deleteBusy ? "Deleting…" : "Delete note"}
+              {deleteBusy ? strings.deleting : strings.deleteNote}
             </Button>
           </div>
         </DialogContent>
@@ -1032,18 +1761,15 @@ export function App({ services }: { services: AppServices }) {
       <Dialog
         open={pendingAction !== null}
         onOpenChange={(open) => {
-          if (!open && !guardBusy) setPendingAction(null);
+          if (!open && !guardBusy) stayOnCurrentPassage();
         }}
       >
-        <DialogContent showCloseButton={!guardBusy}>
-          <DialogTitle>Your note has unsaved changes</DialogTitle>
-          <DialogDescription>
-            The save did not complete. Keep the draft here, try again, or discard the unsaved
-            changes before continuing.
-          </DialogDescription>
+        <DialogContent closeLabel={strings.closeDialog} showCloseButton={!guardBusy}>
+          <DialogTitle>{strings.unsavedNoteTitle}</DialogTitle>
+          <DialogDescription>{strings.unsavedNoteDescription}</DialogDescription>
           <div className="dialog-actions">
-            <Button variant="outline" disabled={guardBusy} onClick={() => setPendingAction(null)}>
-              Stay here
+            <Button variant="outline" disabled={guardBusy} onClick={stayOnCurrentPassage}>
+              {strings.stayHere}
             </Button>
             <Button
               variant="ghost"
@@ -1060,7 +1786,7 @@ export function App({ services }: { services: AppServices }) {
                   .finally(() => setGuardBusy(false));
               }}
             >
-              Discard changes
+              {strings.discardChanges}
             </Button>
             <Button
               disabled={guardBusy}
@@ -1078,7 +1804,7 @@ export function App({ services }: { services: AppServices }) {
                   .finally(() => setGuardBusy(false));
               }}
             >
-              Retry save
+              {strings.retrySave}
             </Button>
           </div>
         </DialogContent>
@@ -1090,18 +1816,15 @@ export function App({ services }: { services: AppServices }) {
         }}
       >
         <DialogContent
+          closeLabel={strings.closeDialog}
           showCloseButton={!closeGuard.busy}
           onEscapeKeyDown={(event) => {
             if (closeGuard.busy) event.preventDefault();
           }}
           onPointerDownOutside={(event) => event.preventDefault()}
         >
-          <DialogTitle>Save changes before closing?</DialogTitle>
-          <DialogDescription>
-            Save your note on this device, discard changes that have not been saved, or return to
-            reading. An autosave already in progress may have completed; discarding keeps all
-            committed changes.
-          </DialogDescription>
+          <DialogTitle>{strings.closeUnsavedTitle}</DialogTitle>
+          <DialogDescription>{strings.closeUnsavedDescription}</DialogDescription>
           {closeGuard.error && (
             <p role="alert" className="text-error">
               {closeGuard.error} {notes.error}
@@ -1109,7 +1832,7 @@ export function App({ services }: { services: AppServices }) {
           )}
           <div className="dialog-actions">
             <Button variant="outline" disabled={closeGuard.busy} onClick={closeGuard.cancel}>
-              Cancel
+              {strings.cancel}
             </Button>
             <Button
               variant="ghost"
@@ -1118,7 +1841,7 @@ export function App({ services }: { services: AppServices }) {
                 void closeGuard.discardAndClose();
               }}
             >
-              Discard changes
+              {strings.discardChanges}
             </Button>
             <Button
               disabled={closeGuard.busy}
@@ -1126,7 +1849,7 @@ export function App({ services }: { services: AppServices }) {
                 void closeGuard.saveAndClose();
               }}
             >
-              {closeGuard.busy ? "Closing…" : "Save and close"}
+              {closeGuard.busy ? strings.closing : strings.saveAndClose}
             </Button>
           </div>
         </DialogContent>

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "build": {
+    "beforeBuildCommand": "node tools/release/verify-ui.mjs && node tools/release/verify-content.mjs && vp build && node tools/release/verify-renderer.mjs"
+  },
+  "bundle": {
+    "active": true,
+    "resources": {
+      "../content/distribution/library.sqlite": "content/library.sqlite",
+      "../content/distribution/approved-content.json": "content/approved-content.json",
+      "../content/distribution/approved-ui.json": "content/approved-ui.json"
+    }
+  }
+}

@@ -90,6 +90,7 @@ interface PlatformFiles {
 
 interface DesktopWindow {
   onCloseRequested(handler: () => void): () => void;
+  resetCloseRequest(): void; // after Cancel or guard teardown
   close(): Promise<void>; // explicit authorization to destroy the guarded window
 }
 ```
@@ -106,7 +107,7 @@ The Tauri SQL plugin is a valid alternative, but mixing it with a second Rust da
 
 ## Runtime composition and lifecycle
 
-1. `src/app/createServices.ts` establishes the runtime once. Native selection uses the supported Tauri API; production builds must fail clearly if native services cannot initialize. Register the native window port before mounting editable UI, so a React effect cleanup cannot leave the editor without close interception.
+1. `src/app/createServices.ts` establishes the adapter set once from the Varlock-declared build target. Keep browser fixture/IndexedDB composition and Tauri composition in separate dynamic modules so a native renderer can tree-shake browser persistence and synthetic content. Native composition also checks the supported Tauri runtime API and fails clearly if native services cannot initialize; it never falls back to browser storage. Register the native window port before mounting editable UI, so a React effect cleanup cannot leave the editor without close interception.
 2. In browser development, load the test manifest and IndexedDB adapter. Label development content. Production Tauri initialization never silently uses IndexedDB.
 3. Initialize user storage, validate content manifest/version/hash, then resolve the saved edition and reference. If a saved edition is absent, retain its anchors, explain the absence and offer an available edition.
 4. Load one chapter, its annotations and applicable settings. Render structured content with React elements. Do not insert publisher content or notes through unchecked HTML.
@@ -118,17 +119,17 @@ Before V1.0, a developer may explicitly reset disposable development stores when
 
 ### Native window-close boundary
 
-`src/adapters/tauri/window.ts` installs one persistent close-request listener during service composition. It prevents every window-close request before delegating to the current UI subscriber; removing that subscriber does not remove protection. `src/app/useWindowCloseGuard.ts` coordinates the local Save/Discard/Cancel decision with `useNoteWorkspace.ts`. It pauses edits and queued autosaves synchronously, inspects the latest draft reference, coalesces repeated requests, and invalidates stale completions after unmount or a port change.
+`src/adapters/tauri/window.ts` installs one persistent close-request listener during service composition. Before the UI guard subscribes for the first time, a window-close request proceeds because no editor draft can exist yet; this also keeps startup failures from trapping the app. After the first subscription, requests remain prevented even during guard cleanup and are delegated to the current UI subscriber. `src/app/useWindowCloseGuard.ts` coordinates the local Save/Discard/Cancel decision with `useNoteWorkspace.ts`. It pauses edits and queued autosaves synchronously, inspects the latest draft reference, coalesces repeated requests, and invalidates stale completions after unmount or a port change.
 
 Save drains already-started writes and commits the latest buffer using the returned note revision; failure keeps the window and draft available for retry or Cancel. Discard waits for already-started writes and drops only the remaining uncommitted buffer: committed autosaves are retained. Cancel resumes editing/autosave. Pending reading-position/preferences transactions settle before destruction; their status remains separate from note durability. Only a successful decision invokes `DesktopWindow.close()`, implemented with Tauri `destroy()` to avoid re-entering close interception. Scope `core:window:allow-destroy` to the main window. Browser `beforeunload` is a best-effort browser-only warning and is not the native guard.
 
-This covers window-close requests. Actual Alt-F4/window-manager verification now passes in the offline Ubuntu 24.04 Xvfb/Openbox smoke, including Cancel/Escape, Discard, locked-database save failure, retry/commit and clean close. This bounded result does not qualify Windows/macOS, full GNOME X11/Wayland, Orca or packages. macOS Command-Q, application-menu Quit and Dock Quit are separate application-exit paths; the window listener does not establish their protection. Keep native quit-path qualification open. Results and remaining gates are owned by [ROADMAP.md](ROADMAP.md) and [TESTING_STRATEGY.md](TESTING_STRATEGY.md).
+The native adapter coalesces additional close and Quit events while a decision is active, preserving the first request's exit route. Cancel or guard teardown resets that route so the next request can be handled. Before the guard first subscribes, an application-level ExitRequested event is approved directly because no editable UI has mounted. After subscription, application-level exit is prevented and forwarded to the same editor guard; after Save or Discard, a narrow native command approves one exit request. A failed event delivery leaves the app open. Actual Alt-F4/window-manager verification passes in the offline Ubuntu 24.04 Xvfb/Openbox smoke, including Cancel/Escape, Discard, locked-database save failure, retry/commit and clean close. This bounded result does not qualify Windows/macOS, full GNOME X11/Wayland, Orca or packages. macOS Command-Q, application-menu Quit and Dock Quit remain separate native qualification checks. Results and remaining gates are owned by [ROADMAP.md](ROADMAP.md) and [TESTING_STRATEGY.md](TESTING_STRATEGY.md).
 
 ## State, errors and performance
 
 React state/context and feature hooks are sufficient initially. Add no global state manager, network query cache, router, or virtualizer without a measured need. A single-reader workspace can navigate between reader, notes and settings through explicit application state. Route/deep-link support is a later justified decision.
 
-Transport boundaries validate unknown inputs and outputs with focused validators. Use error codes such as `CONTENT_UNAVAILABLE`, `REFERENCE_INVALID`, `QUERY_INVALID`, `STORAGE_FULL`, `WRITE_FAILED`, `BACKUP_INVALID`, and `CANCELLED`; include safe user messages and preserve drafts. Native logs never include complete notes or Scripture corpora. No automatic error reporting in V1.
+Transport boundaries validate unknown inputs and outputs with focused validators. Use error codes such as `CONTENT_UNAVAILABLE`, `REFERENCE_INVALID`, `QUERY_INVALID`, `STORAGE_FULL`, `STORAGE_CORRUPT`, `STORAGE_IN_USE`, `WRITE_FAILED`, `BACKUP_INVALID`, and `CANCELLED`; include safe user messages and preserve drafts. Native logs never include complete notes or Scripture corpora. No automatic error reporting in V1.
 
 Search is cancellable/logically superseded and results are paginated in canonical source order; only the current chapter is rendered. Derived text never replaces source text. The provisional performance targets and measurement hardware are owned by [PRD.md](PRD.md), rather than treated as existing results.
 
@@ -171,7 +172,7 @@ The AI panel can fail, be disabled or be removed without affecting reading, sear
 ## Architectural acceptance gates
 
 - The browser and desktop use the same React feature modules and domain types; adapter contract tests exercise identical operations.
-- A public production desktop build contains no browser adapter imports, test corpus, remote assets or provider secrets. Explicit development desktop builds may use the labeled synthetic pack to prove native integration.
+- A public production desktop build contains no browser adapter imports, test corpus, remote assets or provider secrets. Explicit development desktop builds may use the labeled synthetic pack to prove native integration. A separate opt-in `development-content` technical review profile may open the ignored OOCS pack from an absolute local path after hash, source identity, status and SQLite checks; the app labels this candidate as distribution-unapproved. The review path is absent from public builds and never changes the approved-content gate.
 - Rust opens content read-only and demonstrates that a write attempt fails; user transactions are parameterized and restore is atomic under injected failure.
 - The selected edition's bridges, footnotes, poetry and cross-references survive the importer/display integrity fixtures.
 - Phase 1 proves native startup, SQLite save/reopen, content reads and clipboard behavior on Windows, macOS and the Linux qualification baseline before claiming native integration complete. Browser builds and headless Rust tests do not demonstrate a native window launch. A Linux desktop pass qualifies only the recorded Linux environment; Windows/macOS evidence is separate.

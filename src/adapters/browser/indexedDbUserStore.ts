@@ -1,15 +1,77 @@
 import {
   DEFAULT_PREFERENCES,
+  bookmarkIdentity,
+  validateBookmark,
+  validateHighlight,
   validateNote,
   validatePreferences,
   validateReadingPosition,
 } from "../../domain/notes";
-import type { Note, Preferences, ReadingPosition } from "../../domain/notes";
+import type { Bookmark, Highlight, Note, Preferences, ReadingPosition } from "../../domain/notes";
 import type { UserStore } from "../../domain/ports";
 import { AppError } from "../../domain/scripture";
+import {
+  createBackup,
+  parseBackup,
+  type PersonalSnapshot,
+  type UserBackup,
+} from "../../domain/backup";
 
-const DEFAULT_DATABASE_NAME = "afaan-oromo-bible-development-v1";
+const DEFAULT_DATABASE_NAME = "afaan-oromo-bible-development-v3";
 const DATABASE_VERSION = 1;
+
+interface BookmarkRecord {
+  id: string;
+  identity: string;
+  bookmark: Bookmark;
+}
+
+interface HighlightRecord {
+  id: string;
+  unitKey: string;
+  highlight: Highlight;
+}
+
+function decodeHighlightRecord(value: unknown): HighlightRecord {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value) ||
+    !("id" in value) ||
+    !("unitKey" in value) ||
+    !("highlight" in value) ||
+    typeof value.id !== "string" ||
+    typeof value.unitKey !== "string"
+  )
+    throw new AppError("STORAGE_INVALID", "A saved highlight is invalid. It was preserved.");
+  validateHighlight(value.highlight);
+  if (value.id !== value.highlight.id || value.unitKey !== value.highlight.anchor.unitKeys[0])
+    throw new AppError("STORAGE_INVALID", "A saved highlight identity is inconsistent.");
+  return { id: value.id, unitKey: value.unitKey, highlight: value.highlight };
+}
+
+function decodeBookmarkRecord(value: unknown): BookmarkRecord {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value) ||
+    !("id" in value) ||
+    !("identity" in value) ||
+    !("bookmark" in value) ||
+    typeof value.id !== "string" ||
+    typeof value.identity !== "string"
+  ) {
+    throw new AppError("STORAGE_INVALID", "A saved bookmark is invalid. It was preserved.");
+  }
+  validateBookmark(value.bookmark);
+  if (
+    value.id !== value.bookmark.id ||
+    value.identity !== bookmarkIdentity(value.bookmark.anchor)
+  ) {
+    throw new AppError("STORAGE_INVALID", "A saved bookmark identity is inconsistent.");
+  }
+  return { id: value.id, identity: value.identity, bookmark: value.bookmark };
+}
 
 interface BrowserStoreOptions {
   databaseName?: string;
@@ -49,6 +111,10 @@ export class IndexedDbUserStore implements UserStore {
       request.onupgradeneeded = () => {
         // One current schema. No historical migrations or automatic destructive resets.
         request.result.createObjectStore("notes", { keyPath: "id" });
+        const bookmarks = request.result.createObjectStore("bookmarks", { keyPath: "id" });
+        bookmarks.createIndex("identity", "identity", { unique: true });
+        const highlights = request.result.createObjectStore("highlights", { keyPath: "id" });
+        highlights.createIndex("unitKey", "unitKey", { unique: true });
         request.result.createObjectStore("state");
       };
       request.onsuccess = () => {
@@ -59,6 +125,8 @@ export class IndexedDbUserStore implements UserStore {
         }
         if (
           !database.objectStoreNames.contains("notes") ||
+          !database.objectStoreNames.contains("bookmarks") ||
+          !database.objectStoreNames.contains("highlights") ||
           !database.objectStoreNames.contains("state")
         ) {
           database.close();
@@ -94,6 +162,174 @@ export class IndexedDbUserStore implements UserStore {
       };
     });
     return this.database;
+  }
+
+  async listBookmarks(): Promise<Bookmark[]> {
+    return this.transaction(["bookmarks"], "readonly", (transaction, result, fail) => {
+      const request = transaction.objectStore("bookmarks").getAll();
+      request.onsuccess = () => {
+        try {
+          const values: unknown[] = request.result;
+          const bookmarks = values.map((value) => decodeBookmarkRecord(value).bookmark);
+          bookmarks.sort(
+            (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt) || a.id.localeCompare(b.id),
+          );
+          result(bookmarks);
+        } catch (error) {
+          fail(error);
+        }
+      };
+    });
+  }
+
+  async saveBookmark(input: Bookmark): Promise<Bookmark> {
+    validateBookmark(input);
+    const bookmark = structuredClone(input);
+    const identity = bookmarkIdentity(bookmark.anchor);
+    return this.transaction(["bookmarks"], "readwrite", (transaction, result, fail) => {
+      const store = transaction.objectStore("bookmarks");
+      const byId = store.get(bookmark.id);
+      byId.onsuccess = () => {
+        try {
+          const previous =
+            byId.result === undefined ? undefined : decodeBookmarkRecord(byId.result);
+          if (previous && previous.identity !== identity) {
+            throw new AppError("INPUT_INVALID", "A bookmark cannot be moved to another passage.");
+          }
+          const byAnchor = store.index("identity").get(identity);
+          byAnchor.onsuccess = () => {
+            try {
+              const matching =
+                byAnchor.result === undefined ? undefined : decodeBookmarkRecord(byAnchor.result);
+              if (previous && matching?.id !== previous.id) {
+                throw new AppError("STORAGE_INVALID", "The bookmark identity is inconsistent.");
+              }
+              if (previous && previous.bookmark.createdAt !== bookmark.createdAt) {
+                throw new AppError("INPUT_INVALID", "A bookmark's creation time cannot change.");
+              }
+              const saved: Bookmark =
+                matching && !previous
+                  ? { ...matching.bookmark, updatedAt: bookmark.updatedAt }
+                  : bookmark;
+              if (
+                matching &&
+                Date.parse(saved.updatedAt) < Date.parse(matching.bookmark.updatedAt)
+              ) {
+                throw new AppError("REVISION_CONFLICT", "A newer bookmark is already saved.");
+              }
+              validateBookmark(saved);
+              store.put({ id: saved.id, identity, bookmark: saved } satisfies BookmarkRecord);
+              result(saved);
+            } catch (error) {
+              fail(error);
+            }
+          };
+        } catch (error) {
+          fail(error);
+        }
+      };
+    });
+  }
+
+  async deleteBookmark(id: string): Promise<void> {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(id)) {
+      throw new AppError("INPUT_INVALID", "The bookmark identifier is invalid.");
+    }
+    return this.transaction(["bookmarks"], "readwrite", (transaction, result) => {
+      transaction.objectStore("bookmarks").delete(id);
+      result(undefined);
+    });
+  }
+
+  async listHighlights(): Promise<Highlight[]> {
+    return this.transaction(["highlights"], "readonly", (transaction, result, fail) => {
+      const request = transaction.objectStore("highlights").getAll();
+      request.onsuccess = () => {
+        try {
+          result(
+            (request.result as unknown[]).map((item) => decodeHighlightRecord(item).highlight),
+          );
+        } catch (error) {
+          fail(error);
+        }
+      };
+    });
+  }
+
+  async saveHighlights(inputs: Highlight[]): Promise<Highlight[]> {
+    if (inputs.length === 0 || inputs.length > 200)
+      throw new AppError("INPUT_INVALID", "Select up to 200 verses to highlight.");
+    inputs.forEach(validateHighlight);
+    const keys = inputs.map((item) => item.anchor.unitKeys[0]!);
+    if (
+      new Set(keys).size !== keys.length ||
+      new Set(inputs.map((item) => item.id)).size !== inputs.length
+    )
+      throw new AppError("INPUT_INVALID", "Select each verse only once.");
+    const highlights = structuredClone(inputs);
+    return this.transaction(["highlights"], "readwrite", (transaction, result, fail) => {
+      const store = transaction.objectStore("highlights");
+      const saved: Highlight[] = [];
+      let remaining = highlights.length;
+      for (const input of highlights) {
+        const unitKey = input.anchor.unitKeys[0]!;
+        const byId = store.get(input.id);
+        byId.onsuccess = () => {
+          try {
+            const previous =
+              byId.result === undefined ? undefined : decodeHighlightRecord(byId.result);
+            if (previous && previous.unitKey !== unitKey)
+              throw new AppError(
+                "INPUT_INVALID",
+                "An existing highlight cannot move to another verse.",
+              );
+            const lookup = store.index("unitKey").get(unitKey);
+            lookup.onsuccess = () => {
+              try {
+                const existing =
+                  lookup.result === undefined ? undefined : decodeHighlightRecord(lookup.result);
+                if (existing && existing.id !== input.id)
+                  throw new AppError(
+                    "REVISION_CONFLICT",
+                    "A highlight already exists for this verse. Reload and retry.",
+                  );
+                if (
+                  existing &&
+                  (existing.highlight.createdAt !== input.createdAt ||
+                    Date.parse(input.updatedAt) < Date.parse(existing.highlight.updatedAt))
+                )
+                  throw new AppError("REVISION_CONFLICT", "A newer highlight is already saved.");
+                store.put({ id: input.id, unitKey, highlight: input } satisfies HighlightRecord);
+                saved.push(input);
+                if (--remaining === 0) result(saved);
+              } catch (error) {
+                fail(error);
+              }
+            };
+          } catch (error) {
+            fail(error);
+          }
+        };
+      }
+    });
+  }
+
+  async deleteHighlights(ids: string[]): Promise<void> {
+    if (
+      ids.length === 0 ||
+      ids.length > 200 ||
+      new Set(ids).size !== ids.length ||
+      ids.some(
+        (id) =>
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(id),
+      )
+    )
+      throw new AppError("INPUT_INVALID", "Choose valid highlights to remove.");
+    return this.transaction(["highlights"], "readwrite", (transaction, result) => {
+      const store = transaction.objectStore("highlights");
+      ids.forEach((id) => store.delete(id));
+      result(undefined);
+    });
   }
 
   private async transaction<T>(
@@ -298,6 +534,148 @@ export class IndexedDbUserStore implements UserStore {
     return this.transaction(["state"], "readwrite", (transaction, result) => {
       transaction.objectStore("state").put(snapshot, "preferences");
       result(undefined);
+    });
+  }
+
+  async getDatabaseId(): Promise<string> {
+    return this.transaction(["state"], "readwrite", (transaction, result, fail) => {
+      const store = transaction.objectStore("state");
+      const request = store.get("databaseId");
+      request.onsuccess = () => {
+        try {
+          if (request.result !== undefined && typeof request.result !== "string")
+            throw new AppError("STORAGE_INVALID", "The development database identity is invalid.");
+          const id: string = request.result ?? crypto.randomUUID();
+          if (request.result === undefined) store.put(id, "databaseId");
+          result(id);
+        } catch (error) {
+          fail(error);
+        }
+      };
+    });
+  }
+
+  async readSnapshot(): Promise<PersonalSnapshot> {
+    return this.transaction(
+      ["notes", "bookmarks", "highlights", "state"],
+      "readonly",
+      (transaction, result, fail) => {
+        const notes = transaction.objectStore("notes").getAll();
+        const bookmarks = transaction.objectStore("bookmarks").getAll();
+        const highlights = transaction.objectStore("highlights").getAll();
+        const preferences = transaction.objectStore("state").get("preferences");
+        const position = transaction.objectStore("state").get("readingPosition");
+        const requests = [notes, bookmarks, highlights, preferences, position];
+        let remaining = requests.length;
+        const complete = () => {
+          if (--remaining !== 0) return;
+          try {
+            const snapshot: PersonalSnapshot = {
+              notes: (notes.result as unknown[]).map((value) => {
+                validateNote(value);
+                return value;
+              }),
+              bookmarks: (bookmarks.result as unknown[]).map(
+                (value) => decodeBookmarkRecord(value).bookmark,
+              ),
+              highlights: (highlights.result as unknown[]).map(
+                (value) => decodeHighlightRecord(value).highlight,
+              ),
+              preferences: preferences.result === undefined ? [] : [preferences.result],
+              readingPositions: position.result === undefined ? [] : [position.result],
+            };
+            snapshot.preferences.forEach(validatePreferences);
+            snapshot.readingPositions.forEach(validateReadingPosition);
+            result(snapshot);
+          } catch (error) {
+            fail(error);
+          }
+        };
+        requests.forEach((request) => {
+          request.onsuccess = complete;
+        });
+      },
+    );
+  }
+
+  /** Development restore: durable recovery record first, then one replacement transaction. */
+  async replaceSnapshot(snapshot: PersonalSnapshot): Promise<string> {
+    const databaseId = await this.getDatabaseId();
+    createBackup(snapshot, databaseId, "0.1.0");
+    const recovery = createBackup(await this.readSnapshot(), databaseId, "0.1.0");
+    const recoveryKey = `preRestoreRecovery:${crypto.randomUUID()}`;
+    await this.transaction(["state"], "readwrite", (transaction, result) => {
+      transaction.objectStore("state").put(recovery, recoveryKey);
+      result(undefined);
+    });
+    const replacement = structuredClone(snapshot);
+    await this.transaction(
+      ["notes", "bookmarks", "highlights", "state"],
+      "readwrite",
+      (transaction, result) => {
+        const notes = transaction.objectStore("notes");
+        const bookmarks = transaction.objectStore("bookmarks");
+        const highlights = transaction.objectStore("highlights");
+        const state = transaction.objectStore("state");
+        notes.clear();
+        bookmarks.clear();
+        highlights.clear();
+        state.delete("preferences");
+        state.delete("readingPosition");
+        replacement.notes.forEach((item) => notes.put(item));
+        replacement.bookmarks.forEach((item) =>
+          bookmarks.put({
+            id: item.id,
+            identity: bookmarkIdentity(item.anchor),
+            bookmark: item,
+          } satisfies BookmarkRecord),
+        );
+        replacement.highlights.forEach((item) =>
+          highlights.put({
+            id: item.id,
+            unitKey: item.anchor.unitKeys[0]!,
+            highlight: item,
+          } satisfies HighlightRecord),
+        );
+        replacement.preferences.forEach((item) => state.put(item, "preferences"));
+        replacement.readingPositions.forEach((item) => state.put(item, "readingPosition"));
+        state.put(recoveryKey, "latestRecoveryKey");
+        result(undefined);
+      },
+    );
+    return "Browser development storage";
+  }
+
+  async readRecoveryBackup(): Promise<UserBackup | null> {
+    return this.transaction(["state"], "readonly", (transaction, result, fail) => {
+      const state = transaction.objectStore("state");
+      const request = state.get("latestRecoveryKey");
+      request.onsuccess = () => {
+        try {
+          if (request.result === undefined) {
+            result(null);
+            return;
+          }
+          if (
+            typeof request.result !== "string" ||
+            !/^preRestoreRecovery:[0-9a-f-]{36}$/iu.test(request.result)
+          )
+            throw new AppError("STORAGE_INVALID", "The recovery identity is invalid.");
+          const recovery = state.get(request.result);
+          recovery.onsuccess = () => {
+            try {
+              if (recovery.result === undefined)
+                throw new AppError("STORAGE_INVALID", "The recovery copy is missing.");
+              const parsed = parseBackup(JSON.stringify(recovery.result));
+              result(parsed.backup);
+            } catch (error) {
+              fail(error);
+            }
+          };
+        } catch (error) {
+          fail(error);
+        }
+      };
     });
   }
 

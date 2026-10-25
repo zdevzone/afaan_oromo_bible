@@ -1,0 +1,9 @@
+# Afaan Oromo UI wording review
+
+Run `node tools/locales/export-review.mjs` from the repository root. It writes an ignored UTF-8 CSV worksheet at `.tooling/review/afaan-oromo-ui-worksheet.csv`; pass another output path if needed. The worksheet contains every current English UI key, its text, required interpolation placeholders, and empty review columns. Exporting it never modifies `src/locales/om.json` or creates a release approval manifest.
+
+A fluent reviewer should fill `oromo_reviewed` for each row, preserve every listed `{placeholder}` exactly once in that row, and note uncertain terms in `reviewer_note`. Review the words in the running app, including keyboard/screen-reader labels, save failures, recovery and restore warnings, source notices, search language and the difference between UI language and Bible edition. Record the reviewed variety, reviewer, date and the English catalog hash printed by the export command when returning the file. A changed English source catalog requires a fresh worksheet and another review of affected entries.
+
+When the completed worksheet returns, run `node tools/locales/prepare-candidate.mjs <completed-review-worksheet.csv>` from the repository root. This checks every key, current English source string, row order and interpolation placeholder, then writes an ignored `.tooling/review/om-candidate.json` for inspection. Empty translations, stale worksheets and malformed CSV fail without writing a candidate. This is a mechanical intake check; it does not install or approve the translation.
+
+Only reviewed wording belongs in `src/locales/om.json`. The release gate also requires a separately identified review decision and the exact reviewed catalog hash in `content/distribution/approved-ui.json`; a mechanically complete worksheet is not evidence of fluency or approval. The reader currently uses the declared English fallback until those steps are complete.

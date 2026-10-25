@@ -38,7 +38,7 @@ Acceptance:
 
 - A reader reaches any valid book/chapter and a recognized verse using keyboard controls.
 - First/last chapter boundaries, ambiguous aliases, unknown books, invalid labels, bridges, and omitted verses have explicit behavior.
-- Navigation from a search result, annotation, or cross-reference uses the same reference resolver and brings its target into view.
+- Navigation from a search result or annotation resolves its stored edition-aware address and brings its target into view. Source cross-references use their validated book code and source label directly, without reparsing a display string as an alias; a range opens at its start and retains its full source display text.
 
 ## F03 — Verse selection and copying — required
 
@@ -84,10 +84,13 @@ Acceptance:
 
 - Add, reopen, edit label, remove, restart, export, and restore preserve the expected records.
 - A bookmark whose edition/anchor is unavailable remains listed as unresolved and editable/removable, with no guessed remapping.
+- After a content revision, an unchanged saved address and text digest may still open its exact verse; changed or missing text opens only the chapter for review and keeps the bookmark.
 
 ## F06 — Whole-verse highlights — required
 
 Offer a small named, accessible palette for whole verse units. Applying a color to a range sets that color on every unit atomically. A verse has at most one stored color; applying another replaces it. Clear highlight removes only the selected units' highlights, not notes/bookmarks. Arbitrary character ranges, nested colors, and free-form color values are outside V1.
+
+Render a saved highlight only when its full edition-aware anchor resolves to the loaded chapter, including content revision, ordered unit key, source verse label and text digest. Preserve an unresolved saved record for backup/recovery; an explicit color action on the current selected verse may re-anchor that record to the verified current content.
 
 Use shared palette IDs independent of theme; resolve them to contrast-tested light/dark tokens. Include text/shape cues so selection and palette state do not depend only on color. Palette names need fluent localization review.
 
@@ -111,6 +114,7 @@ Acceptance:
 - A standalone and a linked note can be created, edited, located, reopened after restart, detached/relinked, exported/restored, and deleted.
 - Closing with unsaved edits, failed save, full disk, and stale navigation preserve recoverable draft text and truthful status.
 - Missing-edition anchors remain unresolved without deleting note bodies; attaching an invalid reference fails validation without modifying the note.
+- A linked note saved under an earlier content revision opens its exact verse when address, ordered unit keys and text digests still match; changed wording opens the chapter for review without rewriting the note's original anchor.
 
 ## F08 — Reading preferences and settings — required
 
@@ -175,6 +179,8 @@ Acceptance:
 ## F12 — Interface language and source metadata — required
 
 Provide independently modeled Afaan Oromo and English UI catalogs with English fallback for incomplete development strings. Fluent Oromo review is a V1 gate. UI language changes control labels, status/error text, and formatting; they do not translate Scripture, change its edition, modify reference identity, or assume the user's dialect.
+
+Errors from storage and content adapters retain a stable code and a specific diagnostic message. The UI may use a localized message for a code only when that code has one safe user action; `STORAGE_CORRUPT`, `STORAGE_IN_USE`, and `STORAGE_FULL` currently meet that rule. Codes shared by several causes keep their detailed English development fallback until a reviewed message identity or narrower code is available. Never replace a recovery or validation reason with a vague translated error that obscures the next safe action.
 
 Use verified edition titles, book names/aliases, language/dialect metadata, versification ID, publisher, copyright/permission notice, and applicable quotation conditions. Show source note type and attribution where required. Metadata can be corrected only through the validated content pipeline; end users do not edit canonical Bible records.
 

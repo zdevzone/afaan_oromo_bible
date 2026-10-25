@@ -3,6 +3,7 @@ import { useRef, type ComponentProps } from "react";
 import * as Primitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { en } from "../../locales/en";
 
 export const Dialog = Primitive.Root;
 export const DialogTrigger = Primitive.Trigger;
@@ -12,10 +13,11 @@ export function DialogContent({
   className,
   children,
   showCloseButton = true,
+  closeLabel = en.closeDialog,
   onOpenAutoFocus,
   onCloseAutoFocus,
   ...props
-}: ComponentProps<typeof Primitive.Content> & { showCloseButton?: boolean }) {
+}: ComponentProps<typeof Primitive.Content> & { showCloseButton?: boolean; closeLabel?: string }) {
   const returnFocus = useRef<HTMLElement | null>(null);
   return (
     <Primitive.Portal>
@@ -44,7 +46,7 @@ export function DialogContent({
         {showCloseButton && (
           <Primitive.Close
             className="ui-button ui-button-ghost ui-button-icon dialog-close"
-            aria-label="Close dialog"
+            aria-label={closeLabel}
           >
             <X size={18} aria-hidden="true" />
           </Primitive.Close>

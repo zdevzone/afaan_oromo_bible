@@ -25,10 +25,12 @@ function fakeWindow() {
     };
   });
   const close = vi.fn(async () => {});
-  const port: DesktopWindow = { onCloseRequested, close };
+  const resetCloseRequest = vi.fn();
+  const port: DesktopWindow = { onCloseRequested, resetCloseRequest, close };
   return {
     port,
     close,
+    resetCloseRequest,
     onCloseRequested,
     unsubscribe,
     listeners,
@@ -104,6 +106,7 @@ describe("native window close decisions", () => {
 
     act(() => hook.result.current.cancel());
     expect(notes.resumeAfterClose).toHaveBeenCalledTimes(1);
+    expect(window.resetCloseRequest).toHaveBeenCalledOnce();
     expect(notes.state.paused).toBe(false);
     expect(hook.result.current.active).toBe(false);
     expect(hook.result.current.open).toBe(false);

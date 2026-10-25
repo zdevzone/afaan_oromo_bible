@@ -41,6 +41,8 @@ command -v rustup
 
 On PowerShell, use `Get-Command vp,node,rustc,cargo,rustup -ErrorAction SilentlyContinue`. An absent command is a missing prerequisite, not a successful check. Once installed, inspect `vp --version`, `vp env current`, `vp toolchain`, `rustc --version`, and `cargo --version`; retain concise results in setup/status. Avoid raw `env`, `printenv`, or secret-bearing Varlock output in logs.
 
+Vite development dependency caching is configured under ignored `.tooling/vite-cache`, keeping generated files out of shared `node_modules/.vite` ownership conflicts.
+
 The current Linux workspace has Vite+, Node, pnpm and Rust installed. Its tools and caches are session-local under ignored `.tooling/`; source `. /workspace/.tooling/session-env.sh` in this managed workspace if the tools are absent from the shell's `PATH`. This machine-specific setup is not an application dependency. Linux native builds require GTK3 and WebKitGTK 4.1 development prerequisites; their current installation status belongs to the root [README.md](../README.md#current-status). Prepare the documented prerequisites separately on Windows, macOS and Linux before claiming target-platform validation. End users need no Node or Rust installation. See [TECH_STACK.md](TECH_STACK.md).
 
 Use one package manager and its committed lockfile. Global `vp` is convenient, but the exact project-local `vite-plus` version controls builds. After a clean checkout:
@@ -90,7 +92,7 @@ vp run desktop:dev
 vp run desktop:check
 ```
 
-`tools/native.mjs` sets `APP_TARGET=tauri` before Tauri starts the renderer hooks and explicitly enables the internal `development-content` feature. `desktop:check` uses an embedded debug build without bundling and forwards `--locked` to Cargo. It avoids release optimization during integration checks and rejects dependency-lock changes; it is not a signed release check. Do not bypass this selection by invoking the raw Tauri CLI with the default browser target. `vp run public:build` deliberately rejects public packaging until the authorized-content pipeline and release gates exist.
+`tools/native.mjs` sets `APP_TARGET=tauri` before Tauri starts the renderer hooks. Development/check actions enable the internal `development-content` feature; `desktop:check` uses an embedded debug build without bundling and forwards `--locked` to Cargo. It avoids release optimization during integration checks and rejects dependency-lock changes; it is not a signed release check. Do not bypass this selection by invoking the raw Tauri CLI with the default browser target. `vp run public:build` selects the release overlay without development content and runs its approved-pack verifier before bundling. Rights approval, platform checks and signing remain separate release gates.
 
 Use `.deb` as the primary planned Linux V1 package and qualify it on a clean baseline host: installation with declared runtime dependencies, native launch, offline reading, persistence/restart, clipboard, backup/restore and the package lifecycle checks in [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md). Do not claim the package contains a complete system WebKit or supports untested Linux distributions. Keep all data paths resolved through Tauri rather than adding hard-coded Unix locations.
 

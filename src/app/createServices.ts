@@ -1,52 +1,13 @@
-import { isTauri } from "@tauri-apps/api/core";
 import { ENV } from "varlock/env";
 import type { AppServices } from "../domain/ports";
-import { AppError } from "../domain/scripture";
 
+/** Select adapters from the declared build target so Vite can remove the other target. */
 export async function createServices(): Promise<AppServices> {
   if (ENV.APP_TARGET === "tauri") {
-    if (!isTauri()) {
-      throw new AppError("NATIVE_UNAVAILABLE", "Open this build in the desktop application.");
-    }
-    const [{ createTauriLibrary }, { createTauriUserStore }, { writeText }, { createTauriWindow }] =
-      await Promise.all([
-        import("../adapters/tauri/library"),
-        import("../adapters/tauri/userStore"),
-        import("@tauri-apps/plugin-clipboard-manager"),
-        import("../adapters/tauri/window"),
-      ]);
-    return {
-      library: createTauriLibrary(),
-      userStore: createTauriUserStore(),
-      runtime: "tauri",
-      platform: { copyText: (text) => writeText(text), window: await createTauriWindow() },
-    };
+    const { createTauriServices } = await import("./createTauriServices");
+    return createTauriServices();
   }
 
-  if (isTauri()) {
-    throw new AppError(
-      "BUILD_TARGET_INVALID",
-      "This desktop window was started with browser storage. Restart using the desktop:dev command.",
-    );
-  }
-  const [{ createFixtureLibrary }, { createIndexedDbUserStore }] = await Promise.all([
-    import("../adapters/browser/fixtureLibrary"),
-    import("../adapters/browser/indexedDbUserStore"),
-  ]);
-  return {
-    library: createFixtureLibrary(),
-    userStore: createIndexedDbUserStore(),
-    runtime: "browser",
-    platform: {
-      async copyText(text) {
-        if (!navigator.clipboard?.writeText) {
-          throw new AppError(
-            "CLIPBOARD_UNAVAILABLE",
-            "Clipboard access is unavailable. Select and copy the text manually.",
-          );
-        }
-        await navigator.clipboard.writeText(text);
-      },
-    },
-  };
+  const { createBrowserServices } = await import("./createBrowserServices");
+  return createBrowserServices();
 }

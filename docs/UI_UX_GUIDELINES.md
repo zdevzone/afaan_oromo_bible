@@ -12,6 +12,8 @@ The first usable screen opens the last readable passage, or the first book/chapt
 
 V1 has one approved Bible edition. Interface language is independently selectable; changing the interface language never swaps Scripture. Do not display unavailable editions as functioning choices.
 
+Tag the document with the language of the words actually displayed in the app shell. While the incomplete Oromo catalog falls back to English, keep the document language `en` even if the saved preference is `om`. After the reviewed catalog is complete, use `om` for the interface. Tag Scripture and source book names with the installed edition language independently so assistive technology does not infer the text language from the interface preference.
+
 ## Shadcnblocks Pro is the primary UI resource
 
 Our paid Shadcnblocks Pro library is an existing project resource. Use its suitable layouts, blocks, components, and interaction patterns before designing custom equivalents. Build application-specific reader compositions from those resources and their underlying shadcn/ui ecosystem. A finished distributed application may contain licensed components under the user's stated rights; do not package, publish, or resell the proprietary library as a standalone component product. Verify the actual purchased terms and source-publication permissions in [CONTENT_LICENSING.md](CONTENT_LICENSING.md).
@@ -27,6 +29,8 @@ Before implementing a UI area:
 Keep the concise inventory in this document as actual resources are selected. Do not invent Shadcnblocks block IDs or claim a paid block is present before inspecting it.
 
 Initial inventory, 2026-10-19: the [official catalog](https://www.shadcnblocks.com/) and [license page](https://www.shadcnblocks.com/license) were consulted. No purchased component source was available in `/workspace/library-files`. The catalog offers Radix and Base UI variants; use the Radix ecosystem consistently for the initial shell and verify each selected primitive against its explicit Radix documentation, such as [Button](https://ui.shadcn.com/docs/components/radix/button). Generic component URLs can redirect to another ecosystem. Paid block selection and source inspection remain pending; no paid block ID is assumed.
+
+The user-supplied [service terms](https://www.shadcnblocks.com/terms) were checked 2026-10-24. They distinguish free-block end-product use from the [paid license agreement](https://www.shadcnblocks.com/license). Paid end-product use is described as permitted, while public publication of paid component source or derivatives is listed as restricted. No purchased component source is present in this workspace, so no paid block has been copied into the public repository or claimed in this inventory.
 
 | Application need                     | Initial candidate from underlying shadcn/ui           | Verification / composition work                                                            |
 | ------------------------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
@@ -55,6 +59,8 @@ Use one React tree with responsive compositions across Windows, macOS, Linux, an
 | 1100 CSS px and above | Reader with optional book navigation and one study/search pane when the reader retains a useful width. Collapse side panes before compressing Scripture. |
 
 Use `minmax(0, 1fr)` and overflow-aware containers so a long word, reference, or note cannot force horizontal page scrolling. At 320 CSS px reflow width or 400% zoom, offer one-pane access to all core functions. Never require dragging pane edges to reveal a command. A minimum desktop window size is a release decision, not permission to skip zoom/reflow testing.
+
+When a study panel replaces the reader in the single-pane layout, expose that visible panel as the `main` landmark with a top-level heading. At wider widths, keep it a complementary aside. The skip-to-reading link must return from a single-pane study panel to the visible Scripture passage and focus it.
 
 The passage scrolls vertically. Side panes may scroll independently with clear boundaries; avoid nested scroll areas inside the passage. Opening a popover must not move the reader scroll unexpectedly. Search and note panels retain their state when temporarily closed. Navigation after an explicit search/reference action brings the target verse into view and announces the new passage; reopening a panel does not reset the passage.
 
@@ -85,6 +91,8 @@ Offer Light, Dark, and System. On first launch use System; remember a user overr
 All components need default, hover, focus-visible, active, disabled, loading, empty, validation-error, and persistence-error states where relevant. Text contrast must meet 4.5:1, large text 3:1, and non-text controls/focus indicators the relevant 3:1 criterion. Measure final color pairs, including highlighted text and selection in both themes; the palette above is not a contrast test.
 
 Highlights use a small named palette, paired with text labels and an accessible selected state. Never communicate selected verses, save failures, or validation results using color alone. Keep OS high-contrast/forced-color behavior legible; do not erase focus outlines globally.
+
+The shared forced-colors stylesheet uses system colors for focus, active controls, fields, dialogs, and non-color highlight marks. It keeps selected states outlined and marks highlighted Scripture with an underline when the system removes background colors. Browser forced-colors emulation is a regression aid only; verify actual system high contrast in Windows and GNOME/WebKitGTK sessions before release.
 
 For Linux qualification, test GNOME high-contrast settings, enlarged system text, and display scaling in the actual WebKitGTK application on Wayland and X11. Do not assume a GNOME setting necessarily activates the browser's `forced-colors` or color-scheme media query. Verify actual rendering, focus indicators, font fallback/Oromo glyphs, dialogs, and reflow; use the shared tokens and accessible controls to resolve issues. Record any unsupported automatic theme detection honestly while preserving explicit Light/Dark choices.
 

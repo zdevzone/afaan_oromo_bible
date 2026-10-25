@@ -56,7 +56,16 @@ export function assertEdition(value: unknown): asserts value is Edition {
     "licenseNotice",
   ])
     text(value[field]);
+  for (const field of ["languageName", "sourceTitle", "rightsHolderName", "sourceCompletedOn"])
+    if (value[field] !== undefined) text(value[field]);
+  if (
+    value.sourceArchiveSha256 !== undefined &&
+    (typeof value.sourceArchiveSha256 !== "string" ||
+      !/^[a-f0-9]{64}$/iu.test(value.sourceArchiveSha256))
+  )
+    invalid();
   if (typeof value.isSynthetic !== "boolean") invalid();
+  if (value.technicalReviewOnly !== undefined && value.technicalReviewOnly !== true) invalid();
 }
 
 export function assertBook(value: unknown): asserts value is BookSummary {
@@ -71,43 +80,101 @@ export function assertBook(value: unknown): asserts value is BookSummary {
   integer(value.order);
 }
 
-function assertInline(value: unknown): asserts value is InlineNode {
+const blockRoles: Record<string, Set<string>> = {
+  metadata: new Set("h toc1 toc2 toc3 rem".split(" ")),
+  heading: new Set("cl d lh mr ms ms1 mt1 mt2 mt3 qa qr r s1 s2 s3 sp".split(" ")),
+  poetry: new Set("q1 q2 q3 qc qm1 qm2".split(" ")),
+  list: new Set("lf li1 li2 li3".split(" ")),
+  paragraph: new Set("b m mi nb p pc pi1 pm pmc pmo po pr".split(" ")),
+};
+const characterStyles = new Set("fq fqa fr ft it nd rq tl wj xt".split(" "));
+
+function assertSourceMetadata(value: Record<string, unknown>): void {
+  if (value.sourcePath !== undefined) {
+    if (!Array.isArray(value.sourcePath)) invalid();
+    for (const index of value.sourcePath) integer(index);
+  }
+  if (value.sourceAttributes !== undefined) {
+    if (!Array.isArray(value.sourceAttributes)) invalid();
+    const names = new Set<string>();
+    for (const pair of value.sourceAttributes) {
+      if (!Array.isArray(pair) || pair.length !== 2) invalid();
+      text(pair[0]);
+      text(pair[1], true);
+      if (names.has(pair[0])) invalid();
+      names.add(pair[0]);
+    }
+  }
+}
+
+function attribute(value: Record<string, unknown>, name: string): string | undefined {
+  if (!Array.isArray(value.sourceAttributes)) return undefined;
+  const pair = value.sourceAttributes.find(
+    (item: unknown) => Array.isArray(item) && item[0] === name,
+  );
+  return Array.isArray(pair) && typeof pair[1] === "string" ? pair[1] : undefined;
+}
+
+function assertInline(value: unknown, depth: number): asserts value is InlineNode {
+  if (depth > 64) invalid();
   record(value);
-  switch (value.type) {
+  assertSourceMetadata(value);
+  switch (value.kind) {
     case "text":
       text(value.text, true);
       return;
-    case "verse":
+    case "verseStart":
       text(value.unitKey);
       return;
-    case "footnote":
-      text(value.id);
-      text(value.caller, true);
-      text(value.text, true);
+    case "verseEnd":
+    case "optionalBreak":
       return;
-    case "crossReference":
-      text(value.id);
-      text(value.caller, true);
-      text(value.text, true);
-      if (value.target !== null) {
+    case "character":
+      if (!characterStyles.has(String(value.style))) invalid();
+      if (value.sourceAttributes !== undefined && attribute(value, "style") !== value.style)
+        invalid();
+      break;
+    case "footnote":
+      if (value.sourceAttributes !== undefined && attribute(value, "style") !== "f") invalid();
+      break;
+    case "reference":
+      if (
+        value.displayMode !== undefined &&
+        value.displayMode !== "inline" &&
+        value.displayMode !== "callout"
+      )
+        invalid();
+      if (value.target !== undefined && value.target !== null) {
         record(value.target);
         text(value.target.bookCode);
         text(value.target.chapterLabel);
-        text(value.target.verseLabel);
+        if (value.target.verseLabel !== undefined) text(value.target.verseLabel);
+        if (value.target.end !== undefined) {
+          record(value.target.end);
+          text(value.target.end.bookCode);
+          text(value.target.end.chapterLabel);
+          if (value.target.end.verseLabel !== undefined) text(value.target.end.verseLabel);
+          if (value.target.end.bookCode !== value.target.bookCode) invalid();
+        }
       }
-      return;
+      break;
     default:
       invalid();
   }
+  if (value.content !== undefined && !Array.isArray(value.content)) invalid();
+  for (const child of value.content ?? []) assertInline(child, depth + 1);
 }
 
 export function assertChapter(value: unknown): asserts value is ChapterContent {
   assertChapterKey(value);
   record(value);
+  const bookCode = value.bookCode;
+  const chapterLabel = value.chapterLabel;
   if (!Array.isArray(value.verseUnits) || !Array.isArray(value.blocks)) invalid();
   const keys = new Set<string>();
   const labels = new Set<string>();
   const projection = new Map<string, string>();
+  const lastBodyBlock = new Map<string, number>();
   let previousOrder = -1;
   for (const unit of value.verseUnits) {
     record(unit);
@@ -129,28 +196,84 @@ export function assertChapter(value: unknown): asserts value is ChapterContent {
   }
   let activeUnit: string | null = null;
   const milestoneOrder: string[] = [];
-  for (const block of value.blocks) {
-    record(block);
-    if (block.type === "heading") {
-      text(block.text, true);
-      continue;
-    }
-    if (block.type !== "paragraph" && block.type !== "poetry") invalid();
-    if (block.type === "poetry") integer(block.level);
-    if (!Array.isArray(block.children)) invalid();
-    for (const node of block.children) {
-      assertInline(node);
-      if (node.type === "verse") {
-        if (!keys.has(node.unitKey) || projection.has(node.unitKey)) invalid();
+  const unitByKey = new Map(value.verseUnits.map((unit) => [unit.key, unit]));
+  function projectNodes(
+    nodes: InlineNode[],
+    blockIndex: number,
+    inFootnote = false,
+    inNonBody = false,
+  ): void {
+    for (const node of nodes) {
+      assertInline(node, 0);
+      if (node.kind === "verseStart") {
+        if (
+          inFootnote ||
+          activeUnit !== null ||
+          !keys.has(node.unitKey) ||
+          projection.has(node.unitKey)
+        )
+          invalid();
+        const unit = unitByKey.get(node.unitKey);
+        if (!unit) invalid();
+        const expected = `${bookCode} ${chapterLabel}:${unit.label}`;
+        const marker = attribute(node, "sid");
+        if (marker !== undefined && marker !== expected) invalid();
         activeUnit = node.unitKey;
         milestoneOrder.push(node.unitKey);
         projection.set(node.unitKey, "");
-      } else if (node.type === "text" && activeUnit !== null) {
-        projection.set(activeUnit, (projection.get(activeUnit) ?? "") + node.text);
+      } else if (node.kind === "verseEnd") {
+        if (inFootnote || activeUnit === null) invalid();
+        const unit = unitByKey.get(activeUnit);
+        if (!unit) invalid();
+        const marker = attribute(node, "eid");
+        if (marker !== undefined && marker !== `${bookCode} ${chapterLabel}:${unit.label}`)
+          invalid();
+        activeUnit = null;
+      } else if (node.kind === "text" && activeUnit !== null && !inFootnote && !inNonBody) {
+        const previous = projection.get(activeUnit) ?? "";
+        const priorBlock = lastBodyBlock.get(activeUnit);
+        const separator =
+          node.text &&
+          priorBlock !== undefined &&
+          priorBlock !== blockIndex &&
+          !previous.endsWith("\n") &&
+          !node.text.startsWith("\n")
+            ? "\n"
+            : "";
+        projection.set(activeUnit, previous + separator + node.text);
+        if (node.text) lastBodyBlock.set(activeUnit, blockIndex);
       }
+      if (node.kind === "character")
+        projectNodes(node.content ?? [], blockIndex, inFootnote, inNonBody);
+      if (node.kind === "footnote") projectNodes(node.content ?? [], blockIndex, true, inNonBody);
+      if (node.kind === "reference")
+        projectNodes(
+          node.content ?? [],
+          blockIndex,
+          inFootnote || node.displayMode === "callout",
+          inNonBody,
+        );
     }
   }
-  if (milestoneOrder.length !== value.verseUnits.length) invalid();
+  for (const [blockIndex, block] of value.blocks.entries()) {
+    record(block);
+    if (
+      block.kind !== "block" ||
+      typeof block.role !== "string" ||
+      typeof block.style !== "string" ||
+      !blockRoles[block.role]?.has(block.style)
+    )
+      invalid();
+    assertSourceMetadata(block);
+    if (block.sourceAttributes !== undefined && attribute(block, "style") !== block.style)
+      invalid();
+    if (block.content !== undefined && !Array.isArray(block.content)) invalid();
+    const inNonBody =
+      (block.role === "metadata" || block.role === "heading") &&
+      !(block.content ?? []).some((node) => node.kind === "verseStart" || node.kind === "verseEnd");
+    projectNodes(block.content ?? [], blockIndex, false, inNonBody);
+  }
+  if (activeUnit !== null || milestoneOrder.length !== value.verseUnits.length) invalid();
   for (const [index, unit] of value.verseUnits.entries()) {
     if (projection.get(unit.key) !== unit.textPlain || milestoneOrder[index] !== unit.key)
       invalid();

@@ -33,6 +33,7 @@ Status: Phase 1 scaffold established as one application. The tree shows the curr
 │   ├── domain/
 │   │   ├── scripture.ts         # Edition, chapter, verse and structure types
 │   │   ├── notes.ts             # Plain notes, annotations and preferences
+│   │   ├── backup.ts            # Portable user-data format and import validation
 │   │   ├── ports.ts             # Small async interfaces; no platform imports
 │   │   └── validation.ts        # Shared DTO and persistence-boundary validation
 │   ├── services/
@@ -41,19 +42,23 @@ Status: Phase 1 scaffold established as one application. The tree shows the curr
 │   ├── adapters/
 │   │   ├── browser/
 │   │   │   ├── fixtureLibrary.ts
-│   │   │   └── indexedDbUserStore.ts
+│   │   │   ├── indexedDbUserStore.ts
+│   │   │   └── backupFiles.ts   # Browser development download/file picker
 │   │   └── tauri/
 │   │       ├── library.ts
 │   │       ├── userStore.ts
 │   │       ├── transport.ts     # Typed invocation and wire-result validation
+│   │       ├── backupFiles.ts   # Narrow native backup dialog commands
 │   │       └── window.ts        # Persistent prevented close requests and explicit destruction
 │   ├── features/
 │   │   ├── reader/
-│   │   │   ├── ReaderContent.tsx # Source AST rendering; reference form composed in App
+│   │   │   ├── ReaderContent.tsx # Shared typed source-tree rendering; reference form composed in App
 │   │   │   └── SearchPanel.tsx
-│   │   └── notes/
+│   │   ├── notes/
 │   │       ├── NotesPanel.tsx
 │   │       └── useNoteWorkspace.ts # Draft/commit state, ordered autosave and close pause/drain
+│   │   └── backup/
+│   │       └── BackupControls.tsx # Export, validated preview and confirmed replacement
 │   ├── components/
 │   │   ├── ui/                 # Installed/copied shadcn primitives and licensed components
 │   │   └── compositions/       # Future: add when a reusable composition is needed
@@ -64,30 +69,31 @@ Status: Phase 1 scaffold established as one application. The tree shows the curr
 │   ├── fixtures/
 │   │   ├── manifest.json       # Explicitly synthetic; never a published edition
 │   │   └── sample.json         # Structural testing data, not Scripture quotations
-│   ├── sources/               # Future ignored, permission-scoped source archives
-│   └── generated/             # Future ignored output; release-approved packs only
+│   ├── sources/               # Ignored, permission-scoped source archives
+│   └── generated/             # Ignored technical intermediates/packs; approval before release use
 ├── tools/
 │   ├── native.mjs             # Tauri target/feature selection; locked debug desktop:check
-│   ├── check-release.mjs      # Reject public packaging until real content gates exist
+│   ├── release/               # Approved pack verification before public bundling
 │   ├── linux/                 # Ubuntu dev image and real AT-SPI/X11 native smoke runner
-│   └── scripture/
-│       └── README.md          # Fixture checks and future parser/import handoff
+│   └── scripture/             # Source AST, verse projection, chapter tree and technical SQLite builder
+│       └── README.md          # Exact local pipeline commands and approval limits
 ├── src-tauri/
 │   ├── Cargo.toml
 │   ├── Cargo.lock
 │   ├── build.rs
 │   ├── tauri.conf.json         # Shared desktop window/security and platform bundle settings
 │   ├── tauri.linux.conf.json   # Automatically merged Linux .deb target override
+│   ├── tauri.release.conf.json # Explicit approved-content release resource overlay
 │   ├── capabilities/default.json
 │   ├── icons/                 # Required development PNG/ICO; production identity pending
-│   ├── resources/             # Future authorized library pack and notices
 │   └── src/
 │       ├── main.rs            # Binary entry only
 │       ├── lib.rs             # Command registration and managed state
 │       └── storage.rs         # Narrow SQLite repository; split only when warranted
 ├── tests/
-│   ├── contracts/             # Future shared contracts when tests span adapters
+│   ├── contracts/             # Shared full-corpus DTO validation when local source exists
 │   ├── content/               # Future full-import integrity cases
+│   ├── fixtures/              # Synthetic candidate V1 backup contract fixture
 │   └── e2e/                   # Browser workflows; native tests added when wired
 └── .github/workflows/
     └── native-checks.yml      # Frontend checks and four native build-host/architecture jobs
@@ -101,7 +107,7 @@ Keep unit tests beside the behavior they verify; use shared `tests/` only for cr
 
 Keep native APIs in `src/adapters/tauri` and Rust repositories. A reader component receives a service or a hook that already has it; it never imports `invoke`, `indexedDB`, `localStorage`, SQLite, or checks `window.__TAURI__`. Browser-only dynamic imports belong in the composition root and must be omitted from native release output.
 
-The native window port is created before editable UI mounts; the platform listener always prevents close requests while the application hook owns the current save/discard/cancel decision. Keep `core:window:allow-destroy` scoped to `main` in `src-tauri/capabilities/default.json`. The notes hook exposes latest-buffer checks, pause/resume, flush and discard without importing Tauri. Its `beforeunload` warning is browser-only. Window close does not cover macOS application-menu/Command-Q/Dock quit; those paths still need native qualification. Mechanisms and behavior are owned by [ARCHITECTURE.md](ARCHITECTURE.md) and [FEATURE_SPECIFICATIONS.md](FEATURE_SPECIFICATIONS.md).
+The native window port is created before editable UI mounts; the platform listener always prevents close requests while the application hook owns the current save/discard/cancel decision. An application exit request is also prevented and sent through that guard before a narrow native command authorizes exit. Keep `core:window:allow-destroy` scoped to `main` in `src-tauri/capabilities/default.json`. The notes hook exposes latest-buffer checks, pause/resume, flush and discard without importing Tauri. Its `beforeunload` warning is browser-only. macOS application-menu/Command-Q/Dock quit still need native qualification. Mechanisms and behavior are owned by [ARCHITECTURE.md](ARCHITECTURE.md) and [FEATURE_SPECIFICATIONS.md](FEATURE_SPECIFICATIONS.md).
 
 Windows, macOS and Linux use these same React features, Tauri adapters and Rust repositories. Do not create a separate Linux application or storage implementation. Linux is a required V1 target; the proposed initial qualification baseline is Ubuntu 24.04 LTS x86_64/GNOME, with `.deb` as the primary planned artifact. Keep platform package configuration under `src-tauri` and native build/test CI under `.github/workflows` as implemented. The support and package gates are owned by [RELEASE_STRATEGY.md](RELEASE_STRATEGY.md), not inferred from the presence of a Linux configuration file.
 
@@ -111,12 +117,12 @@ Copy licensed components into `src/components/ui` or an appropriately named subf
 
 Content source archives, generated packs and permission correspondence are separate from the application source. Ignore raw private records, local databases, backups and credential files. Keep small redistributable fixtures and non-secret manifests in source control. Do not commit a real user's notes or a complete publisher archive simply to make a test reproducible.
 
-Use per-user application data directories resolved by Tauri on all three desktop platforms; do not hard-code Linux/Unix paths. Keep `library.sqlite`, `user.sqlite` and pre-restore recovery files there; these are runtime paths, not files under `src-tauri/resources`. Bundled content is copied/verified or opened at a resolved read-only path according to [STORAGE_STRATEGY.md](STORAGE_STRATEGY.md).
+Use per-user application data directories resolved by Tauri on all three desktop platforms; do not hard-code Linux/Unix paths. Keep `user.sqlite` and pre-restore recovery files there. The approved immutable `library.sqlite` is a bundled resource, opened through a resolved read-only path after manifest and checksum validation. If a target cannot directly open that resource, follow [STORAGE_STRATEGY.md](STORAGE_STRATEGY.md) for a verified app-data copy. Missing content must not prevent access to personal records.
 
 ## Dependency and module growth
 
 The initial dependency set is React, the Vite+ toolchain, Tailwind, Varlock, actual underlying shadcn component dependencies, Tauri, `rusqlite` and the focused test tools. Do not create `packages/`, an HTTP API, a server directory, a plugin system, a sync protocol or AI clients in Phase 1. See [TECH_STACK.md](TECH_STACK.md) for the specific package inventory.
 
-Add `features/settings`, `features/annotations`, `services/backup.ts` and `adapters/*/platformFiles.ts` when their milestone starts. Do not put all future features behind nonworking buttons. Add an approved importer executable only after its parser and source format are evaluated; keep an inspectable report alongside every generated pack.
+Add a separate settings or annotations feature module only when their existing compositions outgrow `App.tsx`. Backup validation currently lives in `domain/backup.ts`, while the two file adapters and the backup settings controls own platform I/O and presentation. Do not put future features behind nonworking buttons. Keep an inspectable report alongside every generated content pack.
 
 The complete initial task order and exact first files are in the final section of [ROADMAP.md](ROADMAP.md). A working end-to-end slice comes before populating this entire tree.

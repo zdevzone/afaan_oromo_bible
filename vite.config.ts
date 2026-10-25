@@ -3,10 +3,15 @@ import { defineConfig } from "vite-plus";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { varlockVitePlugin } from "@varlock/vite-integration";
+import { checkPublicAssets } from "./tools/check-public-assets.ts";
+
+checkPublicAssets(fileURLToPath(new URL("./public", import.meta.url)));
 
 export default defineConfig({
+  define: { __WDIO_TEST__: JSON.stringify(process.env.AOB_WDIO_TEST === "1") },
   plugins: [varlockVitePlugin(), react(), tailwindcss()],
   clearScreen: false,
+  cacheDir: ".tooling/vite-cache",
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   server: {
     host: "127.0.0.1",

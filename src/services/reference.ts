@@ -4,8 +4,42 @@ import type {
   ChapterContent,
   ChapterKey,
   ReferenceResolution,
+  SourceReferenceTarget,
 } from "../domain/scripture";
 import { normalizeSearchText } from "./search";
+
+/** Source links already carry an edition-scoped book code, so no alias parsing is needed. */
+export async function resolveSourceTarget(
+  target: SourceReferenceTarget,
+  editionId: string,
+  books: readonly BookSummary[],
+  getChapter: (key: ChapterKey) => Promise<ChapterContent>,
+): Promise<ReferenceResolution> {
+  const book = books.find(
+    (candidate) => candidate.editionId === editionId && candidate.code === target.bookCode,
+  );
+  if (!book || !book.chapters.includes(target.chapterLabel))
+    throw new AppError(
+      "REFERENCE_UNAVAILABLE",
+      "This source reference is unavailable in the installed edition.",
+    );
+  const chapter: ChapterKey = {
+    editionId,
+    bookCode: target.bookCode,
+    chapterLabel: target.chapterLabel,
+  };
+  if (!target.verseLabel) return { chapter, unitKeys: [] };
+  const content = await getChapter(chapter);
+  const keys = Object.hasOwn(content.referenceLookup, target.verseLabel)
+    ? content.referenceLookup[target.verseLabel]
+    : undefined;
+  if (!keys?.length)
+    throw new AppError(
+      "REFERENCE_UNAVAILABLE",
+      "This source reference is unavailable in the installed edition.",
+    );
+  return { chapter, unitKeys: [...keys] };
+}
 
 export async function resolveReference(
   input: string,

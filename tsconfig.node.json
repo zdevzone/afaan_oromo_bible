@@ -12,5 +12,5 @@
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.node.tsbuildinfo"
   },
-  "include": ["vite.config.ts", "playwright.config.ts", "env.d.ts"]
+  "include": ["vite.config.ts", "playwright.config.ts", "tools/check-public-assets.ts", "env.d.ts"]
 }

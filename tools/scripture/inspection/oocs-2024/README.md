@@ -29,7 +29,11 @@ The default publication declares all 66 available books in canonical display ord
 
 `MAT 2:5-6` is one source verse unit covering two numeric addresses. The corpus has 31,103 covered numeric labels. The versification file also lists 123 book-count entries and 257 mappings; its additional books are not missing files in this 66-book publication.
 
-Formal USX schema validation, source-to-app text equivalence, publisher-rendering comparison, fluent Oromo review and production approval have not been performed. Parsing and address consistency alone do not prove final rendering integrity.
+All 66 USX members passed the official USX 3.0.8 Relax NG schema in an ignored local validation run on 2026-10-24. The schema came from [the official USX repository](https://github.com/ubsicap/usx/blob/2ec4bc5df6d5676693066040aff06e145368a0cb/schema/usx.rng), SHA-256 `15aa14aa898a9d3d4e30363042d56e9474ea8054286587c5124458ef5f1cc110`; lxml 6.0.2 produced `content/generated/oocs-2024-usx-schema-report.json`. The repeatable command is documented in [the scripture tooling guide](../../README.md). Publisher-rendering comparison, fluent Oromo review and production approval remain open. The later source-run, chapter-tree and SQLite comparisons are described in the [pipeline record](../../../../docs/SCRIPTURE_PIPELINE.md); schema and structural checks do not prove final visual equivalence.
+
+## Projection whitespace review sample
+
+An audit of the ignored v3 projection from the registered archive counted 31,102 nonblank verse units. Of these, 366 begin with whitespace, 13,474 end with whitespace, and 9,856 contain a line break. Counts overlap; they describe source-preserving projected text, not editorial errors. Representative review references are `MAT 5:3` (leading poetry line break/indent), `GEN 1:1` (trailing source space), and `GEN 1:27` (line break within a unit). Compare each rendered passage and copy output with the supplied USX and publisher presentation before freezing the whitespace policy. Keep the canonical source runs unchanged during that review.
 
 ## License evidence
 

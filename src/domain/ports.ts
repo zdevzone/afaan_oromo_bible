@@ -1,4 +1,5 @@
-import type { Note, Preferences, ReadingPosition } from "./notes";
+import type { Bookmark, Highlight, Note, Preferences, ReadingPosition } from "./notes";
+import type { PersonalSnapshot, UserBackup } from "./backup";
 import type {
   BookSummary,
   ChapterContent,
@@ -18,6 +19,16 @@ export interface ScriptureLibrary {
 }
 
 export interface UserStore {
+  readSnapshot(): Promise<PersonalSnapshot>;
+  getDatabaseId(): Promise<string>;
+  readRecoveryBackup(): Promise<UserBackup | null>;
+  replaceSnapshot(snapshot: PersonalSnapshot): Promise<string>;
+  listBookmarks(): Promise<Bookmark[]>;
+  saveBookmark(bookmark: Bookmark): Promise<Bookmark>;
+  deleteBookmark(id: string): Promise<void>;
+  listHighlights(): Promise<Highlight[]>;
+  saveHighlights(highlights: Highlight[]): Promise<Highlight[]>;
+  deleteHighlights(ids: string[]): Promise<void>;
   listNotes(): Promise<Note[]>;
   saveNote(note: Note): Promise<Note>;
   deleteNote(id: string): Promise<void>;
@@ -33,6 +44,9 @@ export interface AppServices {
   runtime: "browser" | "tauri";
   platform: {
     copyText(text: string): Promise<void>;
+    saveBackup(): Promise<string | null>;
+    openBackup(): Promise<string | null>;
+    recoverCorruptDatabase?(): Promise<string>;
     window?: DesktopWindow;
   };
 }
@@ -40,5 +54,6 @@ export interface AppServices {
 /** Requests are already prevented by the adapter; only close() authorizes destruction. */
 export interface DesktopWindow {
   onCloseRequested(handler: () => void): () => void;
+  resetCloseRequest(): void;
   close(): Promise<void>;
 }
